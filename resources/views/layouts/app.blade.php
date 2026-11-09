@@ -17,7 +17,13 @@
             <nav class="flex items-center gap-4 text-sm">
                 <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
                 <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
-                @stack('nav')
+                @auth
+                    @php($unread = auth()->user()->unreadNotifications()->count())
+                    <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">
+                        🔔<span data-unread-badge @if ($unread === 0) hidden @endif
+                              class="absolute -right-2 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold leading-4 text-white">{{ $unread }}</span>
+                    </a>
+                @endauth
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="text-slate-500 hover:text-slate-800">Keluar</button>

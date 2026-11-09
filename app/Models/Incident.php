@@ -54,4 +54,19 @@ class Incident extends Model
     {
         return $this->ended_at === null;
     }
+
+    /** Lama insiden, mis. "29 mnt" atau "2 jam 5 mnt" (berjalan sampai sekarang bila masih terbuka). */
+    public function durationLabel(): string
+    {
+        $end = $this->ended_at ?? now();
+        $minutes = max(0, intdiv($end->getTimestamp() - $this->started_at->getTimestamp(), 60));
+
+        if ($minutes < 60) {
+            return "{$minutes} mnt";
+        }
+
+        $rest = $minutes % 60;
+
+        return intdiv($minutes, 60).' jam'.($rest > 0 ? " {$rest} mnt" : '');
+    }
 }

@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardDataController;
 use App\Http\Controllers\IncidentAcknowledgeController;
+use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ZoneReadingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +21,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/dashboard/data', DashboardDataController::class)->name('dashboard.data');
+    Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::get('/zones/{zone}/readings', ZoneReadingsController::class)->name('zones.readings');
     Route::post('/incidents/{incident}/acknowledge', IncidentAcknowledgeController::class)->name('incidents.acknowledge');
 });
