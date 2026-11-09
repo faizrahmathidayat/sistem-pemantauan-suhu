@@ -1,13 +1,13 @@
 # Sistem Pemantauan Suhu & Kelembapan Gudang Produk Segar
 
-Pemantauan telur, buah, dan sayur berbasis IoT: **ESP32 + DHT22** mengirim data ke **Laravel 13 (PHP 8.4)**, yang menyimpan data, menilai status tiap zona, dan memberi notifikasi in-app ke semua user saat suhu/kelembapan keluar batas atau sensor berhenti mengirim data.
+Pemantauan telur, buah, dan sayur berbasis IoT: **ESP32 + DHT22** mengirim data ke **Laravel 13 (PHP 8.4)**, yang menyimpan data, menilai status tiap zona, dan memberi notifikasi in-app ke user yang rolenya boleh menerima notifikasi saat suhu/kelembapan keluar batas atau sensor berhenti mengirim data.
 
 ```
 ESP32 + DHT22 --POST JSON (Bearer token)--> /api/v1/telemetry --> sensor_logs
                                                     |
                                   IncidentManager (2 pembacaan berturut-turut)
                                                     |
-                          incidents + notifikasi database ke semua user
+                  incidents + notifikasi database ke user berizin notifikasi
                                                     |
         Dashboard web (kartu zona, grafik 24 jam, banner kritis, riwayat insiden)
 ```
@@ -36,14 +36,31 @@ Zona contoh (`gudang-zona-a|b|c`) memakai batas **placeholder**. Sesuaikan denga
 | B (Sayur Daun) | 15–25°C | 80–95% |
 | C (Buah) | 8–13°C | 85–95% |
 
-Setiap perubahan lewat halaman ini tercatat (siapa, kapan, nilai lama → baru) di menu **Log Perubahan** (`/audit-logs`); mengubah langsung di database atau seeder tidak tercatat. Ubah lewat menu **Batas Zona** di dashboard (`/zones`; semua pengguna yang sudah masuk boleh mengubah, perubahan langsung berlaku). Alternatif: `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`, yang menimpa nilai di database) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
+Ubah lewat menu **Batas Zona** di dashboard (`/zones`; perlu izin `zone.update`, perubahan langsung berlaku). Setiap perubahan lewat halaman ini tercatat (siapa, kapan, nilai lama → baru) di menu **Log Perubahan** (`/audit-logs`); mengubah langsung di database atau seeder tidak tercatat. Alternatif: `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`, yang menimpa nilai di database) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
 
 ## User dan token perangkat
 
-Tidak ada halaman pendaftaran publik. Semua user terdaftar menerima semua alert.
+Tidak ada halaman pendaftaran publik. User dibuat oleh administrator lewat menu **User** (`/users`) atau lewat perintah di bawah.
+
+### Role dan hak akses
+
+Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role dikelola di menu **Role** (`/roles`, izin `role.manage`) dengan kotak centang izin per role. Izin yang tersedia: `dashboard.view`, `incident.view`, `incident.acknowledge`, `notification.view`, `zone.view`, `zone.update`, `auditlog.view`, `user.manage`, `role.manage`.
+
+| Role awal | Izin |
+|---|---|
+| Administrator (sistem) | Semua izin, selalu (tidak bisa diubah atau dihapus) |
+| Supervisor | Dashboard, insiden (lihat dan tandai ditangani), notifikasi, batas zona (lihat dan ubah), log perubahan |
+| Operator | Dashboard, insiden (lihat dan tandai ditangani), notifikasi |
+
+- Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view`.
+- Selalu tersisa minimal satu Administrator; Administrator terakhir tidak bisa dihapus atau dipindah role, dan user tidak bisa menghapus akunnya sendiri.
+- Role yang masih dipakai user tidak bisa dihapus. User tanpa role hanya melihat halaman "belum punya hak akses".
+- Pembuatan, perubahan, dan penghapusan user dan role tercatat di **Log Perubahan** (kata sandi tidak pernah dicatat).
+- Instalasi yang sudah berjalan: `php artisan migrate` membuat role awal dan menjadikan semua user yang ada sebagai Administrator.
 
 ```bash
-php artisan user:create "Budi Santoso" budi@example.com    # kata sandi akan ditanyakan
+php artisan user:create "Budi Santoso" budi@example.com    # kata sandi akan ditanyakan; role bawaan Administrator
+php artisan user:create "Sari" sari@example.com --role=Operator
 php artisan zone:token gudang-zona-a                       # token ESP32 zona A, tampil sekali
 ```
 
@@ -95,4 +112,4 @@ php artisan test
 
 ## Batasan versi 1
 
-HTTP tanpa HTTPS (jaringan lokal), tanpa layar admin untuk zona/batas/perangkat, tanpa peran user berbeda, tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi.
+HTTP tanpa HTTPS (jaringan lokal), tanpa layar admin untuk nama zona/perangkat/token (batas zona sudah bisa diubah), satu role per user (berlaku di semua zona; role per gudang belum ada), tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi.

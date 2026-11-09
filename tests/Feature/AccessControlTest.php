@@ -11,6 +11,7 @@ use App\Models\Zone;
 use App\Services\DashboardSnapshot;
 use App\Services\IncidentManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AccessControlTest extends TestCase
@@ -60,7 +61,7 @@ class AccessControlTest extends TestCase
         return $this->actingAs($user)->call($method, $uri);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('protectedRoutes')]
+    #[DataProvider('protectedRoutes')]
     public function test_each_route_requires_its_permission(string $method, string $uri, Permission $required): void
     {
         $allowed = User::factory()->withPermissions($required)->create();
