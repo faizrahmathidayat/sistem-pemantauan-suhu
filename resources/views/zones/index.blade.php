@@ -27,7 +27,14 @@
                                 <p class="text-xs text-slate-500">{{ $zone->products->pluck('name')->implode(', ') }}</p>
                             @endif
                         </div>
-                        <a href="{{ route('zones.edit', $zone) }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Ubah</a>
+                        <div class="flex shrink-0 flex-col items-end gap-1">
+                            @can('zone.update')
+                                <a href="{{ route('zones.edit', $zone) }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Ubah batas</a>
+                            @endcan
+                            @can('zone.manage')
+                                <a href="{{ route('zones.manage', $zone) }}" class="text-xs text-slate-600 underline">Kelola zona</a>
+                            @endcan
+                        </div>
                     </div>
                     <dl class="mt-3 space-y-1 text-sm">
                         <div class="flex justify-between gap-2">

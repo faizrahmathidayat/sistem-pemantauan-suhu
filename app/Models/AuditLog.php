@@ -51,6 +51,7 @@ class AuditLog extends Model
         'role' => ['Role', ''],
         'password' => ['Kata sandi', ''],
         'permissions' => ['Izin', ''],
+        'token' => ['Token sensor', ''],
         'warehouse' => ['Gudang', ''],
         'warehouses' => ['Gudang', ''],
         'device_id' => ['Device ID', ''],

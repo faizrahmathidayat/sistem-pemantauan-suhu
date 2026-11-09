@@ -6,7 +6,6 @@ use App\Models\Zone;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 
 #[Signature('zone:token {device_id : device_id zona yang akan diberi token}')]
 #[Description('Buat (atau putar ulang) token perangkat untuk sebuah zona; token hanya ditampilkan sekali')]
@@ -21,8 +20,7 @@ class ZoneToken extends Command
             return self::FAILURE;
         }
 
-        $token = Str::random(48);
-        $zone->update(['device_token_hash' => hash('sha256', $token)]);
+        $token = $zone->issueToken();
 
         $this->info('Token untuk '.$zone->name.' (simpan sekarang, tidak akan ditampilkan lagi):');
         $this->line('Token: '.$token);

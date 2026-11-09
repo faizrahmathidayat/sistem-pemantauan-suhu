@@ -11,6 +11,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\ZoneManagementController;
 use App\Http\Controllers\ZoneReadingsController;
 use App\Http\Controllers\ZoneSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('warehouses', WarehouseController::class)->except('show')->middleware('can:warehouse.manage');
     Route::resource('users', UserController::class)->except('show')->middleware('can:user.manage');
     Route::resource('roles', RoleController::class)->except('show')->middleware('can:role.manage');
+
+    Route::middleware('can:zone.manage')->group(function () {
+        Route::get('/warehouses/{warehouse}/zones/create', [ZoneManagementController::class, 'create'])->name('warehouses.zones.create');
+        Route::post('/warehouses/{warehouse}/zones', [ZoneManagementController::class, 'store'])->name('warehouses.zones.store');
+        Route::get('/zones/{zone}/manage', [ZoneManagementController::class, 'manage'])->name('zones.manage');
+        Route::put('/zones/{zone}/manage', [ZoneManagementController::class, 'update'])->name('zones.manage.update');
+        Route::post('/zones/{zone}/token', [ZoneManagementController::class, 'token'])->name('zones.token');
+        Route::delete('/zones/{zone}', [ZoneManagementController::class, 'destroy'])->name('zones.destroy');
+    });
 
     Route::get('/zones', [ZoneSettingsController::class, 'index'])->middleware('can:zone.view')->name('zones.index');
     Route::middleware('can:zone.update')->group(function () {

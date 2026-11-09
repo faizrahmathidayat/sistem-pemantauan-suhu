@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 #[Hidden(['device_token_hash'])]
 class Zone extends Model
@@ -80,6 +81,18 @@ class Zone extends Model
             }
         });
         $this->unsetRelation('products');
+    }
+
+    /**
+     * Buat token perangkat baru (token lama langsung tidak berlaku). Hanya hash sha256 yang
+     * disimpan; nilai asli dikembalikan sekali ini saja.
+     */
+    public function issueToken(): string
+    {
+        $token = Str::random(48);
+        $this->forceFill(['device_token_hash' => hash('sha256', $token)])->save();
+
+        return $token;
     }
 
     public function logs(): HasMany
