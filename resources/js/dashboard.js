@@ -48,7 +48,7 @@ function renderBanners() {
             const text = acknowledged
                 ? `🛠️ Sedang ditangani oleh <strong>${esc(b.acknowledged_by)}</strong>. ${esc(b.message)}`
                 : `${icon} <strong>${b.kind === 'kritis' ? 'KRITIS:' : 'SENSOR OFFLINE:'}</strong> ${esc(b.message)}`;
-            const button = acknowledged
+            const button = acknowledged || !state.can_acknowledge
                 ? ''
                 : `<button type="button" data-ack="${b.incident_id}" class="w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow sm:w-auto">Tandai Telah Ditangani</button>`;
 
@@ -183,7 +183,8 @@ async function refresh() {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin',
         });
-        if (response.status === 401 || response.status === 419) {
+        // 403: izin user dicabut saat halaman terbuka; muat ulang agar halaman menjelaskannya.
+        if (response.status === 401 || response.status === 403 || response.status === 419) {
             window.location.reload();
             return;
         }

@@ -15,17 +15,25 @@
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
             <a href="{{ url('/dashboard') }}" class="font-semibold">🥬 {{ config('app.name') }}</a>
             <nav class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
-                <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
-                <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
-                <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
-                @auth
+                @can('dashboard.view')
+                    <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
+                @endcan
+                @can('incident.view')
+                    <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
+                @endcan
+                @can('zone.view')
+                    <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
+                @endcan
+                @can('auditlog.view')
+                    <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
+                @endcan
+                @can('notification.view')
                     @php($unread = auth()->user()->unreadNotifications()->count())
                     <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">
                         🔔<span data-unread-badge @if ($unread === 0) hidden @endif
                               class="absolute -right-2 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold leading-4 text-white">{{ $unread }}</span>
                     </a>
-                @endauth
+                @endcan
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="text-slate-500 hover:text-slate-800">Keluar</button>

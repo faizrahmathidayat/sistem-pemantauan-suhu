@@ -18,9 +18,9 @@ class AuthTest extends TestCase
         $this->get('/dashboard')->assertRedirect(route('login'));
     }
 
-    public function test_root_redirects_to_dashboard(): void
+    public function test_root_redirects_to_home(): void
     {
-        $this->get('/')->assertRedirect('/dashboard');
+        $this->get('/')->assertRedirect('/home');
     }
 
     public function test_login_page_renders_for_guests(): void
@@ -28,12 +28,12 @@ class AuthTest extends TestCase
         $this->get('/login')->assertOk()->assertSee('Masuk');
     }
 
-    public function test_valid_login_redirects_to_dashboard(): void
+    public function test_valid_login_redirects_to_home(): void
     {
         $user = User::factory()->create(['password' => 'rahasia123']);
 
         $this->post('/login', ['email' => $user->email, 'password' => 'rahasia123'])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('home'));
 
         $this->assertAuthenticatedAs($user);
     }

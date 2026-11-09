@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\IncidentReason;
+use App\Enums\Permission;
 use App\Models\Incident;
 use App\Models\SensorLog;
 use App\Models\User;
@@ -132,6 +133,10 @@ final class IncidentManager
 
     private function notify(Incident $incident, ?SensorLog $log): void
     {
-        Notification::send(User::all(), new IncidentOpened($incident->loadMissing('zone'), $log));
+        // Hanya user yang rolenya boleh menerima notifikasi (Administrator selalu).
+        Notification::send(
+            User::withPermission(Permission::NotificationView)->get(),
+            new IncidentOpened($incident->loadMissing('zone'), $log),
+        );
     }
 }

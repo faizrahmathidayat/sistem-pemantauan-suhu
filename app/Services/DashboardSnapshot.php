@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Console\Commands\CheckOfflineZones;
 use App\Enums\IncidentReason;
+use App\Enums\Permission;
 use App\Models\Incident;
 use App\Models\User;
 use App\Models\Zone;
@@ -20,7 +21,7 @@ final class DashboardSnapshot
     public function __construct(private ZoneStatusEvaluator $evaluator) {}
 
     /**
-     * @return array{zones: list<array<string, mixed>>, banners: list<array<string, mixed>>, unread_notifications: int, scheduler_stale: bool}
+     * @return array{zones: list<array<string, mixed>>, banners: list<array<string, mixed>>, unread_notifications: int, can_acknowledge: bool, scheduler_stale: bool}
      */
     public function build(User $user): array
     {
@@ -67,6 +68,7 @@ final class DashboardSnapshot
             'zones' => $zones,
             'banners' => $banners,
             'unread_notifications' => $user->unreadNotifications()->count(),
+            'can_acknowledge' => $user->hasPermission(Permission::IncidentAcknowledge),
             'scheduler_stale' => $this->schedulerStale($now),
         ];
     }
