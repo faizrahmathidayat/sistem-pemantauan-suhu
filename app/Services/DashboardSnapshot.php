@@ -43,6 +43,7 @@ final class DashboardSnapshot
                     'humidity_min' => $zone->humidity_min,
                     'humidity_max' => $zone->humidity_max,
                     'trend' => $this->trend($zone, $log?->temperature),
+                    'humidity_trend' => $this->humidityTrend($zone, $log?->humidity),
                     'last_seen_seconds' => $log === null ? null : max(0, $now->getTimestamp() - $log->created_at->getTimestamp()),
                     '_severity' => $status->severity(),
                 ];
@@ -76,6 +77,16 @@ final class DashboardSnapshot
             $temperature === null => null,
             $temperature > $zone->temp_max => 'naik',
             $temperature < $zone->temp_min => 'turun',
+            default => null,
+        };
+    }
+
+    private function humidityTrend(Zone $zone, ?float $humidity): ?string
+    {
+        return match (true) {
+            $humidity === null => null,
+            $zone->humidity_max !== null && $humidity > $zone->humidity_max => 'naik',
+            $zone->humidity_min !== null && $humidity < $zone->humidity_min => 'turun',
             default => null,
         };
     }

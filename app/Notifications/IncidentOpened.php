@@ -45,7 +45,9 @@ class IncidentOpened extends Notification
             'limit' => $reason->limitFor($zone),
             'occurred_at' => $this->incident->started_at->toIso8601String(),
             'advice' => $reason->advice(),
-            'url' => url('/dashboard'),
+            // Relatif: URL lengkap dibentuk saat tampil, mengikuti host yang dipakai pembaca
+            // (notifikasi dari scheduler dibuat di CLI, sehingga url() akan memakai APP_URL).
+            'url' => '/dashboard',
         ];
     }
 }

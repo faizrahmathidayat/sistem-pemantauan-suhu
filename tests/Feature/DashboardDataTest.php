@@ -26,12 +26,12 @@ class DashboardDataTest extends TestCase
         Cache::forever('zones:last-offline-check', now()->toIso8601String());
     }
 
-    private function zoneWithLog(string $name, ?float $temperature, int $secondsAgo = 10): Zone
+    private function zoneWithLog(string $name, ?float $temperature, int $secondsAgo = 10, float $humidity = 88): Zone
     {
         $zone = Zone::factory()->create(['name' => $name]);
         if ($temperature !== null) {
             SensorLog::factory()->create([
-                'device_id' => $zone->device_id, 'temperature' => $temperature, 'humidity' => 88,
+                'device_id' => $zone->device_id, 'temperature' => $temperature, 'humidity' => $humidity,
                 'created_at' => now()->subSeconds($secondsAgo),
             ]);
         }
@@ -107,6 +107,27 @@ class DashboardDataTest extends TestCase
         $this->assertSame('naik', $trends['Panas']);
         $this->assertSame('turun', $trends['Dingin']);
         $this->assertNull($trends['Normal']);
+    }
+
+    public function test_humidity_trend_is_naik_above_max_turun_below_min_else_null(): void
+    {
+        $this->zoneWithLog('Lembap', 20, 10, 98);
+        $this->zoneWithLog('Kering', 20, 10, 70);
+        $this->zoneWithLog('Normal', 20, 10, 88);
+
+        $trends = collect($this->data()['zones'])->pluck('humidity_trend', 'name');
+
+        $this->assertSame('naik', $trends['Lembap']);
+        $this->assertSame('turun', $trends['Kering']);
+        $this->assertNull($trends['Normal']);
+    }
+
+    public function test_humidity_trend_is_null_when_humidity_limits_are_not_set(): void
+    {
+        $zone = $this->zoneWithLog('Tanpa batas RH', 20, 10, 5);
+        $zone->update(['humidity_min' => null, 'humidity_max' => null]);
+
+        $this->assertNull($this->data()['zones'][0]['humidity_trend']);
     }
 
     public function test_open_danger_incident_produces_kritis_banner(): void

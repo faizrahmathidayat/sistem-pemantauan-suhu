@@ -74,6 +74,18 @@ class NotificationPageTest extends TestCase
         $this->assertSame(1, $owner->unreadNotifications()->count());
     }
 
+    public function test_dashboard_link_follows_the_host_the_viewer_uses(): void
+    {
+        // Notifikasi dari scheduler dibuat di CLI (APP_URL=localhost); tautannya harus
+        // tetap benar untuk user yang membuka lewat IP LAN.
+        $user = User::factory()->create();
+        $this->notify($user, 'Zona A');
+
+        $this->actingAs($user)->get('http://192.168.1.50/notifications')
+            ->assertSee('href="http://192.168.1.50/dashboard"', false)
+            ->assertDontSee('localhost', false);
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
         $this->get('/notifications')->assertRedirect(route('login'));

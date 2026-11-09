@@ -29,7 +29,7 @@
                 </p>
                 <p class="mt-1 text-sm">{{ $data['advice'] ?? '' }}</p>
                 <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                    <a href="{{ $data['url'] ?? url('/dashboard') }}" class="font-medium text-emerald-700">🔗 Buka Dashboard Monitoring</a>
+                    <a href="{{ url($data['url'] ?? '/dashboard') }}" class="font-medium text-emerald-700">🔗 Buka Dashboard Monitoring</a>
                     @unless ($notification->read_at)
                         <form method="POST" action="{{ url('/notifications/'.$notification->id.'/read') }}">
                             @csrf

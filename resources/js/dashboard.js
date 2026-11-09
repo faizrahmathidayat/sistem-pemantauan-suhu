@@ -82,6 +82,12 @@ function renderZones() {
             const humidityLimit = z.humidity_min !== null && z.humidity_max !== null
                 ? ` · RH ${num(z.humidity_min)}–${num(z.humidity_max)}%`
                 : '';
+            // Bila penyebab bahaya adalah kelembapan, sorot barisnya seperti suhu.
+            const humidityArrow = z.humidity_trend === 'naik' ? ' ↑' : z.humidity_trend === 'turun' ? ' ↓' : '';
+            const humidityClass = z.humidity_trend ? 'font-bold text-red-600' : '';
+            const humidityBound = z.humidity_trend === 'naik'
+                ? ` (Max: ${num(z.humidity_max)}%)`
+                : z.humidity_trend === 'turun' ? ` (Min: ${num(z.humidity_min)}%)` : '';
 
             return `<article class="rounded-xl border-l-8 ${s.border} bg-white p-4 shadow-sm ${danger ? 'ring-2 ring-red-200' : ''}">
                 <div class="flex items-center justify-between gap-2">
@@ -92,7 +98,7 @@ function renderZones() {
                     <span class="text-4xl font-bold ${danger ? 'text-red-600' : ''}">${num(z.temperature)}°C</span>${arrow}
                     <span class="text-sm font-medium ${limitColor}">${limit}</span>
                 </div>
-                <p class="mt-1 text-sm text-slate-500">💧 ${num(z.humidity)}%${humidityLimit}</p>
+                <p class="mt-1 text-sm text-slate-500">💧 <span class="${humidityClass}">${num(z.humidity)}%${humidityArrow}${humidityBound}</span>${humidityLimit}</p>
                 <p class="text-xs text-slate-400">update ${ago(z.last_seen_seconds)}</p>
             </article>`;
         })
