@@ -27,6 +27,9 @@
                 @can('auditlog.view')
                     <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
                 @endcan
+                @can('warehouse.manage')
+                    <a href="{{ url('/warehouses') }}" class="hover:text-emerald-700">Gudang</a>
+                @endcan
                 @can('user.manage')
                     <a href="{{ url('/users') }}" class="hover:text-emerald-700">User</a>
                 @endcan

@@ -20,6 +20,7 @@ class HomeController extends Controller
         'notification.view' => 'notifications.index',
         'zone.view' => 'zones.index',
         'auditlog.view' => 'audit-logs.index',
+        'warehouse.manage' => 'warehouses.index',
         'user.manage' => 'users.index',
         'role.manage' => 'roles.index',
     ];

@@ -23,6 +23,13 @@ class AuditLog extends Model
         'role.created' => 'Menambah role',
         'role.updated' => 'Mengubah role',
         'role.deleted' => 'Menghapus role',
+        'warehouse.created' => 'Menambah gudang',
+        'warehouse.updated' => 'Mengubah gudang',
+        'warehouse.deleted' => 'Menghapus gudang',
+        'zone.created' => 'Menambah zona',
+        'zone.updated' => 'Mengubah zona',
+        'zone.deleted' => 'Menghapus zona',
+        'zone.token_rotated' => 'Memutar token sensor',
         'user.created' => 'Menambah user',
         'user.updated' => 'Mengubah user',
         'user.deleted' => 'Menghapus user',
@@ -44,6 +51,10 @@ class AuditLog extends Model
         'role' => ['Role', ''],
         'password' => ['Kata sandi', ''],
         'permissions' => ['Izin', ''],
+        'warehouse' => ['Gudang', ''],
+        'warehouses' => ['Gudang', ''],
+        'device_id' => ['Device ID', ''],
+        'products' => ['Produk', ''],
     ];
 
     protected $fillable = [

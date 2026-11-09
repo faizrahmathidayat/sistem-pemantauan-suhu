@@ -10,6 +10,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\ZoneReadingsController;
 use App\Http\Controllers\ZoneSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
 
+    Route::resource('warehouses', WarehouseController::class)->except('show')->middleware('can:warehouse.manage');
     Route::resource('users', UserController::class)->except('show')->middleware('can:user.manage');
     Route::resource('roles', RoleController::class)->except('show')->middleware('can:role.manage');
 

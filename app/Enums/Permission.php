@@ -12,8 +12,10 @@ enum Permission: string
     case IncidentView = 'incident.view';
     case IncidentAcknowledge = 'incident.acknowledge';
     case NotificationView = 'notification.view';
+    case WarehouseManage = 'warehouse.manage';
     case ZoneView = 'zone.view';
     case ZoneUpdate = 'zone.update';
+    case ZoneManage = 'zone.manage';
     case AuditLogView = 'auditlog.view';
     case UserManage = 'user.manage';
     case RoleManage = 'role.manage';
@@ -25,8 +27,10 @@ enum Permission: string
             self::IncidentView => 'Melihat riwayat insiden',
             self::IncidentAcknowledge => 'Menandai insiden telah ditangani',
             self::NotificationView => 'Melihat notifikasi dan menerima alert',
+            self::WarehouseManage => 'Mengelola gudang',
             self::ZoneView => 'Melihat batas zona',
             self::ZoneUpdate => 'Mengubah batas zona',
+            self::ZoneManage => 'Mengelola zona dan produk',
             self::AuditLogView => 'Melihat log perubahan',
             self::UserManage => 'Mengelola user',
             self::RoleManage => 'Mengelola role',
@@ -39,7 +43,8 @@ enum Permission: string
             self::DashboardView => 'Dashboard',
             self::IncidentView, self::IncidentAcknowledge => 'Insiden',
             self::NotificationView => 'Notifikasi',
-            self::ZoneView, self::ZoneUpdate => 'Zona',
+            self::WarehouseManage => 'Gudang',
+            self::ZoneView, self::ZoneUpdate, self::ZoneManage => 'Zona',
             self::AuditLogView => 'Log',
             self::UserManage, self::RoleManage => 'Akses',
         };
