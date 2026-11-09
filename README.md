@@ -36,7 +36,7 @@ Zona contoh (`gudang-zona-a|b|c`) memakai batas **placeholder**. Sesuaikan denga
 | B (Sayur Daun) | 15–25°C | 80–95% |
 | C (Buah) | 8–13°C | 85–95% |
 
-Ubah lewat `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
+Ubah lewat menu **Batas Zona** di dashboard (`/zones`; semua pengguna yang sudah masuk boleh mengubah, perubahan langsung berlaku). Alternatif: `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`, yang menimpa nilai di database) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
 
 ## User dan token perangkat
 

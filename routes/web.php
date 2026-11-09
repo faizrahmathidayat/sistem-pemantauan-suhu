@@ -7,6 +7,7 @@ use App\Http\Controllers\IncidentAcknowledgeController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ZoneReadingsController;
+use App\Http\Controllers\ZoneSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('/zones', [ZoneSettingsController::class, 'index'])->name('zones.index');
+    Route::get('/zones/{zone}/edit', [ZoneSettingsController::class, 'edit'])->name('zones.edit');
+    Route::put('/zones/{zone}', [ZoneSettingsController::class, 'update'])->name('zones.update');
     Route::get('/zones/{zone}/readings', ZoneReadingsController::class)->name('zones.readings');
     Route::post('/incidents/{incident}/acknowledge', IncidentAcknowledgeController::class)->name('incidents.acknowledge');
 });

@@ -1,0 +1,48 @@
+@extends('layouts.app')
+
+@section('title', 'Batas Zona')
+
+@section('content')
+    @php
+        $n = fn ($v) => rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
+    @endphp
+
+    <h1 class="text-lg font-semibold">Batas Suhu &amp; Kelembapan</h1>
+    <p class="text-sm text-slate-500">Di luar batas = status Bahaya. Dekat batas (dalam margin) = status Waspada. Perubahan langsung dipakai pada pembacaan sensor berikutnya.</p>
+
+    @if (session('status'))
+        <p role="status" class="mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✅ {{ session('status') }}</p>
+    @endif
+
+    <ul class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        @forelse ($zones as $zone)
+            <li class="rounded-xl bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <h2 class="font-semibold">{{ $zone->name }}</h2>
+                        <p class="text-xs text-slate-500">{{ $zone->product_type->label() }} · {{ $zone->device_id }}</p>
+                    </div>
+                    <a href="{{ route('zones.edit', $zone) }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Ubah</a>
+                </div>
+                <dl class="mt-3 space-y-1 text-sm">
+                    <div class="flex justify-between gap-2">
+                        <dt class="text-slate-500">🌡️ Suhu</dt>
+                        <dd class="font-medium">{{ $n($zone->temp_min) }}–{{ $n($zone->temp_max) }} °C <span class="text-xs font-normal text-slate-500">(Waspada ±{{ $n($zone->warning_margin) }})</span></dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <dt class="text-slate-500">💧 Kelembapan</dt>
+                        <dd class="font-medium">
+                            @if ($zone->humidity_min !== null && $zone->humidity_max !== null)
+                                {{ $n($zone->humidity_min) }}–{{ $n($zone->humidity_max) }} % <span class="text-xs font-normal text-slate-500">(Waspada ±{{ $n($zone->humidity_warning_margin) }})</span>
+                            @else
+                                <span class="text-slate-500">Tidak diperiksa</span>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+            </li>
+        @empty
+            <li class="rounded-xl bg-white p-4 text-slate-500 shadow-sm">Belum ada zona terdaftar.</li>
+        @endforelse
+    </ul>
+@endsection

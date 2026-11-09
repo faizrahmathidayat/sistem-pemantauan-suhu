@@ -17,6 +17,7 @@
             <nav class="flex items-center gap-4 text-sm">
                 <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
                 <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
+                <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
                 @auth
                     @php($unread = auth()->user()->unreadNotifications()->count())
                     <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">
