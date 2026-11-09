@@ -12,12 +12,13 @@
     @yield('banner')
 
     <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
             <a href="{{ url('/dashboard') }}" class="font-semibold">🥬 {{ config('app.name') }}</a>
-            <nav class="flex items-center gap-4 text-sm">
+            <nav class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                 <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
                 <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
                 <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
+                <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
                 @auth
                     @php($unread = auth()->user()->unreadNotifications()->count())
                     <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">

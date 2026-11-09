@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardDataController;
@@ -26,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/zones', [ZoneSettingsController::class, 'index'])->name('zones.index');
     Route::get('/zones/{zone}/edit', [ZoneSettingsController::class, 'edit'])->name('zones.edit');
     Route::put('/zones/{zone}', [ZoneSettingsController::class, 'update'])->name('zones.update');
