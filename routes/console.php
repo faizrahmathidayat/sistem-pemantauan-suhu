@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Scheduler WAJIB berjalan (php artisan schedule:work, atau cron tiap menit).
+Schedule::command('zones:check-offline')->everyMinute()->withoutOverlapping();
+Schedule::command('model:prune')->daily();
