@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Incident;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class IncidentController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('incidents.index', [
-            'incidents' => Incident::with(['zone', 'acknowledger'])->latest('started_at')->paginate(15),
+            'incidents' => Incident::visibleTo($request->user())
+                ->with(['zone', 'acknowledger'])->latest('started_at')->paginate(15),
         ]);
     }
 }

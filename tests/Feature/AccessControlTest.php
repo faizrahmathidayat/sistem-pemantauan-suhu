@@ -64,9 +64,9 @@ class AccessControlTest extends TestCase
     #[DataProvider('protectedRoutes')]
     public function test_each_route_requires_its_permission(string $method, string $uri, Permission $required): void
     {
-        $allowed = User::factory()->withPermissions($required)->create();
+        $allowed = User::factory()->withPermissions($required)->assignedTo($this->zone->warehouse)->create();
         $other = collect(Permission::cases())->first(fn (Permission $p) => $p !== $required);
-        $denied = User::factory()->withPermissions($other)->create();
+        $denied = User::factory()->withPermissions($other)->assignedTo($this->zone->warehouse)->create();
 
         $this->assertNotSame(403, $this->requestAs($allowed, $method, $uri)->getStatusCode(), 'dengan izin');
         $this->assertSame(403, $this->requestAs($denied, $method, $uri)->getStatusCode(), 'tanpa izin');
@@ -140,8 +140,8 @@ class AccessControlTest extends TestCase
     public function test_alerts_reach_only_users_with_notification_permission(): void
     {
         $admin = User::factory()->create();
-        $operator = User::factory()->withRole(Role::where('name', 'Operator')->sole())->create();
-        $silent = User::factory()->withPermissions(Permission::DashboardView)->create();
+        $operator = User::factory()->withRole(Role::where('name', 'Operator')->sole())->assignedTo($this->zone->warehouse)->create();
+        $silent = User::factory()->withPermissions(Permission::DashboardView)->assignedTo($this->zone->warehouse)->create();
         $this->incident->delete();
 
         foreach ([0, 30] as $offset) {

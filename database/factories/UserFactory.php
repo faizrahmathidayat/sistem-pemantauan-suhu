@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -40,6 +41,14 @@ class UserFactory extends Factory
     public function withRole(Role $role): static
     {
         return $this->state(fn (array $attributes) => ['role_id' => $role->id]);
+    }
+
+    /** User yang di-assign ke gudang-gudang tertentu. */
+    public function assignedTo(Warehouse ...$warehouses): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->warehouses()->syncWithoutDetaching(
+            array_map(fn (Warehouse $warehouse) => $warehouse->id, $warehouses),
+        ));
     }
 
     public function withoutRole(): static

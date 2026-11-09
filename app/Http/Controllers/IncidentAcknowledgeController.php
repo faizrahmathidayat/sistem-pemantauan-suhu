@@ -11,6 +11,8 @@ class IncidentAcknowledgeController extends Controller
 {
     public function __invoke(Request $request, Incident $incident): JsonResponse|RedirectResponse
     {
+        abort_unless($request->user()->canAccessZone($incident->zone), 403);
+
         // Pengklik pertama tetap tercatat; insiden yang sudah tertutup tidak diubah.
         // Update atomik agar dua klik bersamaan tidak saling menimpa.
         if ($incident->isOpen()) {

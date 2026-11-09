@@ -6,17 +6,22 @@ use App\Http\Requests\UpdateZoneRequest;
 use App\Models\Zone;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ZoneSettingsController extends Controller
 {
     public function index(): View
     {
-        return view('zones.index', ['zones' => Zone::with(['warehouse', 'products'])->orderBy('name')->get()]);
+        return view('zones.index', [
+            'zones' => Zone::visibleTo(request()->user())->with(['warehouse', 'products'])->orderBy('name')->get(),
+        ]);
     }
 
-    public function edit(Zone $zone): View
+    public function edit(Request $request, Zone $zone): View
     {
+        abort_unless($request->user()->canAccessZone($zone), 403);
+
         return view('zones.edit', ['zone' => $zone->load(['warehouse', 'products'])]);
     }
 

@@ -45,6 +45,18 @@ class Incident extends Model
         return $this->belongsTo(User::class, 'acknowledged_by');
     }
 
+    /**
+     * Insiden zona yang boleh dilihat user (lewat gudangnya).
+     *
+     * @param  Builder<Incident>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if (! $user->isAdministrator()) {
+            $query->whereHas('zone', fn (Builder $zone) => $zone->visibleTo($user));
+        }
+    }
+
     public function scopeOpen(Builder $query): void
     {
         $query->whereNull('ended_at');

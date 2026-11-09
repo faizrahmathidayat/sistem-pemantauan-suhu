@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\ZoneFactory;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,6 +41,18 @@ class Zone extends Model
             'warning_margin' => 'float',
             'humidity_warning_margin' => 'float',
         ];
+    }
+
+    /**
+     * Zona yang boleh dilihat user (lewat gudangnya): semua untuk Administrator.
+     *
+     * @param  Builder<Zone>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if (! $user->isAdministrator()) {
+            $query->whereIn('warehouse_id', DB::table('warehouse_user')->where('user_id', $user->id)->select('warehouse_id'));
+        }
     }
 
     public function warehouse(): BelongsTo

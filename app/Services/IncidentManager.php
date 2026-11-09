@@ -133,9 +133,11 @@ final class IncidentManager
 
     private function notify(Incident $incident, ?SensorLog $log): void
     {
-        // Hanya user yang rolenya boleh menerima notifikasi (Administrator selalu).
+        // Hanya user yang rolenya boleh menerima notifikasi dan yang punya akses ke gudang zona ini
+        // (Administrator selalu memenuhi keduanya).
+        $incident->loadMissing('zone');
         Notification::send(
-            User::withPermission(Permission::NotificationView)->get(),
+            User::withPermission(Permission::NotificationView)->withWarehouseAccess($incident->zone->warehouse_id)->get(),
             new IncidentOpened($incident->loadMissing('zone'), $log),
         );
     }

@@ -13,6 +13,8 @@ class ZoneReadingsController extends Controller
 
     public function __invoke(Request $request, Zone $zone): JsonResponse
     {
+        abort_unless($request->user()->canAccessZone($zone), 403);
+
         $hours = (int) $request->query('hours', 24);
         $hours = $request->query('hours') === null || ! is_numeric($request->query('hours'))
             ? 24

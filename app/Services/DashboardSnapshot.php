@@ -27,7 +27,7 @@ final class DashboardSnapshot
     {
         $now = now();
 
-        $zones = Zone::with(['latestLog', 'products'])->orderBy('name')->get()
+        $zones = Zone::visibleTo($user)->with(['latestLog', 'products'])->orderBy('name')->get()
             ->map(function (Zone $zone) use ($now): array {
                 $log = $zone->latestLog;
                 $status = $this->evaluator->forZone($zone, $now);
@@ -55,7 +55,7 @@ final class DashboardSnapshot
             ->values()
             ->all();
 
-        $banners = Incident::open()->with(['zone.latestLog', 'acknowledger'])->orderBy('started_at')->get()
+        $banners = Incident::open()->visibleTo($user)->with(['zone.latestLog', 'acknowledger'])->orderBy('started_at')->get()
             ->map(fn (Incident $incident): array => [
                 'incident_id' => $incident->id,
                 'zone_name' => $incident->zone->name,

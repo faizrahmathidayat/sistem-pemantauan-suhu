@@ -18,7 +18,8 @@ class UpdateZoneRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true; // semua pengguna terdaftar boleh mengatur batas; akses dijaga middleware `auth`
+        // Izin `zone.update` dijaga middleware pada route; di sini hanya zona di gudang yang boleh diakses.
+        return $this->user()->canAccessZone($this->route('zone'));
     }
 
     /** Pengguna Indonesia terbiasa menulis "2,5"; PHP/Laravel hanya paham "2.5". */
