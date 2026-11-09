@@ -6,3 +6,17 @@
 @theme {
     --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
 }
+
+.chip {
+    flex: none;
+    min-height: 2.25rem;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    padding: 0.25rem 0.9rem;
+    font-size: 0.875rem;
+}
+
+.chip-active {
+    background: #059669;
+    color: #fff;
+}

@@ -2,107 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Console\Commands\CheckOfflineZones;
-use App\Enums\IncidentReason;
-use App\Models\Incident;
-use App\Models\Zone;
-use App\Services\ZoneStatusEvaluator;
+use App\Services\DashboardSnapshot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 
 class DashboardDataController extends Controller
 {
-    private const SCHEDULER_STALE_AFTER_MINUTES = 5;
-
-    public function __invoke(Request $request, ZoneStatusEvaluator $evaluator): JsonResponse
+    public function __invoke(Request $request, DashboardSnapshot $snapshot): JsonResponse
     {
-        $now = now();
-
-        $zones = Zone::with('latestLog')->orderBy('name')->get()
-            ->map(function (Zone $zone) use ($evaluator, $now): array {
-                $log = $zone->latestLog;
-                $status = $evaluator->forZone($zone, $now);
-
-                return [
-                    'id' => $zone->id,
-                    'name' => $zone->name,
-                    'product_type' => $zone->product_type->value,
-                    'status' => $status->value,
-                    'temperature' => $log?->temperature,
-                    'humidity' => $log?->humidity,
-                    'temp_min' => $zone->temp_min,
-                    'temp_max' => $zone->temp_max,
-                    'humidity_min' => $zone->humidity_min,
-                    'humidity_max' => $zone->humidity_max,
-                    'trend' => $this->trend($zone, $log?->temperature),
-                    'last_seen_seconds' => $log === null ? null : max(0, $now->getTimestamp() - $log->created_at->getTimestamp()),
-                    '_severity' => $status->severity(),
-                ];
-            })
-            ->sortBy([['_severity', 'asc'], ['name', 'asc']])
-            ->map(fn (array $row) => array_diff_key($row, ['_severity' => true]))
-            ->values()
-            ->all();
-
-        $banners = Incident::open()->with(['zone.latestLog', 'acknowledger'])->orderBy('started_at')->get()
-            ->map(fn (Incident $incident): array => [
-                'incident_id' => $incident->id,
-                'zone_name' => $incident->zone->name,
-                'kind' => $incident->reason === IncidentReason::SensorOffline ? 'offline' : 'kritis',
-                'message' => $this->message($incident),
-                'started_at' => $incident->started_at->toIso8601String(),
-                'acknowledged_by' => $incident->acknowledger?->name,
-            ])->all();
-
-        return response()->json([
-            'zones' => $zones,
-            'banners' => $banners,
-            'unread_notifications' => $request->user()->unreadNotifications()->count(),
-            'scheduler_stale' => $this->schedulerStale($now),
-        ]);
-    }
-
-    private function trend(Zone $zone, ?float $temperature): ?string
-    {
-        return match (true) {
-            $temperature === null => null,
-            $temperature > $zone->temp_max => 'naik',
-            $temperature < $zone->temp_min => 'turun',
-            default => null,
-        };
-    }
-
-    private function message(Incident $incident): string
-    {
-        $zone = $incident->zone;
-        $reason = $incident->reason;
-
-        if ($reason === IncidentReason::SensorOffline) {
-            $since = $zone->latestLog?->created_at?->format('H:i');
-
-            return "Sensor {$zone->name} tidak mengirim data".($since ? " sejak {$since}" : '').'.';
-        }
-
-        return sprintf(
-            '%s di %s: %s%s (batas %s%s).',
-            $reason->label(), $zone->name,
-            $this->number($incident->peak_value), $reason->unit(),
-            $this->number($reason->limitFor($zone)), $reason->unit(),
-        );
-    }
-
-    private function number(?float $value): string
-    {
-        return $value === null ? '-' : rtrim(rtrim(number_format($value, 1, '.', ''), '0'), '.');
-    }
-
-    private function schedulerStale(Carbon $now): bool
-    {
-        $last = Cache::get(CheckOfflineZones::LAST_CHECK_CACHE_KEY);
-
-        return $last === null
-            || Carbon::parse($last)->lt($now->copy()->subMinutes(self::SCHEDULER_STALE_AFTER_MINUTES));
+        return response()->json($snapshot->build($request->user()));
     }
 }
