@@ -6,7 +6,7 @@
     <div class="flex items-center justify-between gap-3">
         <div>
             <h1 class="text-lg font-semibold">User</h1>
-            <p class="text-sm text-slate-500">Akun yang bisa masuk ke sistem, beserta role-nya.</p>
+            <p class="text-sm text-slate-500">Akun yang bisa masuk ke sistem, beserta role dan gudangnya.</p>
         </div>
         <a href="{{ route('users.create') }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">+ User</a>
     </div>
@@ -36,6 +36,14 @@
                 </div>
                 <p class="mt-2 text-sm">
                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ $user->role?->name ?? 'Tanpa role' }}</span>
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                    @if ($user->isAdministrator())
+                        Semua gudang
+                    @else
+                        @php($names = $user->warehouses->filter(fn ($w) => $visibleWarehouseIds === null || in_array($w->id, $visibleWarehouseIds, true))->pluck('name')->sort()->values())
+                        {{ $names->isEmpty() ? 'Belum ditugaskan' : $names->implode(', ') }}
+                    @endif
                 </p>
                 @if (! $user->is(auth()->user()) && (auth()->user()->isAdministrator() || ! $user->isAdministrator()))
                     <form method="POST" action="{{ route('users.destroy', $user) }}" class="mt-3"

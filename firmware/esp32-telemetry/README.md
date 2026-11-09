@@ -17,12 +17,12 @@ Modul DHT22 berpapan 3 pin biasanya sudah punya resistor pull-up. Pada sensor 4 
 1. Pasang dukungan board **esp32 by Espressif** (Boards Manager), pilih board **ESP32 Dev Module**.
 2. Library Manager: **DHT sensor library** (Adafruit, beserta *Adafruit Unified Sensor*) dan **ArduinoJson** versi 7.x.
 3. Salin `config.example.h` menjadi `config.h`, isi Wi-Fi, `API_URL`, `DEVICE_ID`, dan `DEVICE_TOKEN`.
-4. Di server: `php artisan zone:token gudang-zona-a` lalu salin token yang tampil (hanya muncul sekali).
+4. Di aplikasi: menu **Gudang** → buka gudangnya → **+ Zona** (atau **Kelola** pada zona yang ada), lalu salin token yang tampil (hanya muncul sekali). Alternatif CLI: `php artisan zone:token cikokol-fg`.
 5. Upload, buka Serial Monitor (115200 baud). Keluaran normal:
 
 ```
 [wifi] tersambung, IP 192.168.1.50
-[http] terkirim: {"device_id":"gudang-zona-a","temperature":18.2,"humidity":62.4}
+[http] terkirim: {"device_id":"cikokol-fg","temperature":18.2,"humidity":62.4}
 ```
 
 ## Pemecahan masalah

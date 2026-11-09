@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\AuditLogger;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,14 +18,25 @@ class UserController extends Controller
     /** Kolom yang dicatat lewat entri khusus (nama role, keterangan kata sandi), bukan diff mentah. */
     private const AUDIT_IGNORE = ['password', 'remember_token', 'role_id'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('users.index', ['users' => User::with('role')->orderBy('name')->get()]);
+        return view('users.index', [
+            'users' => User::with(['role', 'warehouses'])->orderBy('name')->get(),
+            // null = Administrator melihat semua; selain itu hanya gudang miliknya yang boleh dibaca namanya.
+            'visibleWarehouseIds' => $request->user()->isAdministrator()
+                ? null
+                : $request->user()->warehouses()->pluck('warehouses.id')->all(),
+        ]);
     }
 
     public function create(Request $request): View
     {
-        return view('users.create', ['user' => new User, 'roles' => $this->assignableRoles($request)]);
+        return view('users.create', [
+            'user' => new User,
+            'roles' => $this->assignableRoles($request),
+            'warehouses' => $this->assignableWarehouses($request),
+            'selectedWarehouses' => [],
+        ]);
     }
 
     public function store(UserRequest $request, AuditLogger $audit): RedirectResponse
@@ -35,11 +48,21 @@ class UserController extends Controller
             return back()->withInput()->withErrors(['role_id' => 'Hanya Administrator yang boleh memberi role Administrator.']);
         }
 
-        $user = new User($data);
-        $audit->saveAndLog($user, $request->user(), 'user.created', $user->name, [
+        $user = new User(collect($data)->except('warehouses')->all());
+        $warehouseIds = $this->requestedWarehouseIds($request);
+
+        $extra = [
             'role' => ['from' => null, 'to' => $role->name],
             'password' => ['from' => null, 'to' => 'diubah'],
-        ], self::AUDIT_IGNORE);
+        ];
+        if ($warehouseIds !== []) {
+            $extra['warehouses'] = ['from' => [], 'to' => $this->warehouseNames($warehouseIds)];
+        }
+
+        DB::transaction(function () use ($audit, $request, $user, $extra, $warehouseIds): void {
+            $audit->saveAndLog($user, $request->user(), 'user.created', $user->name, $extra, self::AUDIT_IGNORE);
+            $user->warehouses()->sync($warehouseIds);
+        });
 
         return redirect()->route('users.index')->with('status', "User {$user->name} ditambahkan.");
     }
@@ -48,7 +71,14 @@ class UserController extends Controller
     {
         $this->ensureMayManage($request, $user);
 
-        return view('users.edit', ['user' => $user, 'roles' => $this->assignableRoles($request)]);
+        $assignable = $this->assignableWarehouses($request);
+
+        return view('users.edit', [
+            'user' => $user,
+            'roles' => $this->assignableRoles($request),
+            'warehouses' => $assignable,
+            'selectedWarehouses' => $user->warehouses()->whereIn('warehouses.id', $assignable->modelKeys())->pluck('warehouses.id')->all(),
+        ]);
     }
 
     public function update(UserRequest $request, User $user, AuditLogger $audit): RedirectResponse
@@ -76,7 +106,10 @@ class UserController extends Controller
 
         $oldRoleName = $user->role?->name;
         $passwordChanged = filled($data['password'] ?? null);
-        $user->fill(collect($data)->except($passwordChanged ? [] : ['password'])->all());
+        $user->fill(collect($data)->except(array_merge(['warehouses'], $passwordChanged ? [] : ['password']))->all());
+
+        $currentIds = $user->warehouses()->pluck('warehouses.id')->all();
+        $newIds = $this->mergedAssignment($actor, $currentIds, $this->requestedWarehouseIds($request));
 
         $extra = [];
         if ($user->isDirty('role_id')) {
@@ -85,8 +118,14 @@ class UserController extends Controller
         if ($passwordChanged) {
             $extra['password'] = ['from' => null, 'to' => 'diubah'];
         }
+        if ($this->sorted($currentIds) !== $this->sorted($newIds)) {
+            $extra['warehouses'] = ['from' => $this->warehouseNames($currentIds), 'to' => $this->warehouseNames($newIds)];
+        }
 
-        $audit->saveAndLog($user, $actor, 'user.updated', $user->name, $extra, self::AUDIT_IGNORE);
+        DB::transaction(function () use ($audit, $actor, $user, $extra, $newIds): void {
+            $audit->saveAndLog($user, $actor, 'user.updated', $user->name, $extra, self::AUDIT_IGNORE);
+            $user->warehouses()->sync($newIds);
+        });
 
         return redirect()->route('users.index')->with('status', "User {$user->name} disimpan.");
     }
@@ -126,6 +165,63 @@ class UserController extends Controller
             ->when(! $request->user()->isAdministrator(), fn ($query) => $query->where('is_system', false))
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Gudang yang boleh ditetapkan pelaku: semua untuk Administrator, selain itu gudang miliknya.
+     *
+     * @return Collection<int, Warehouse>
+     */
+    private function assignableWarehouses(Request $request): Collection
+    {
+        return Warehouse::visibleTo($request->user())->orderBy('name')->get();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function requestedWarehouseIds(Request $request): array
+    {
+        return array_values(array_unique(array_map('intval', $request->validated('warehouses') ?? [])));
+    }
+
+    /**
+     * Administrator mengganti seluruh daftar; user lain hanya mengatur gudang miliknya dan tidak
+     * menyentuh gudang target yang tidak bisa ia lihat.
+     *
+     * @param  list<int>  $current
+     * @param  list<int>  $requested
+     * @return list<int>
+     */
+    private function mergedAssignment(User $actor, array $current, array $requested): array
+    {
+        if ($actor->isAdministrator()) {
+            return $requested;
+        }
+
+        $allowed = $actor->warehouses()->pluck('warehouses.id')->all();
+
+        return array_values(array_unique(array_merge(array_diff($current, $allowed), $requested)));
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<string>
+     */
+    private function warehouseNames(array $ids): array
+    {
+        return Warehouse::whereIn('id', $ids)->orderBy('name')->pluck('name')->all();
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    private function sorted(array $ids): array
+    {
+        sort($ids);
+
+        return array_values($ids);
     }
 
     private function administratorCount(): int

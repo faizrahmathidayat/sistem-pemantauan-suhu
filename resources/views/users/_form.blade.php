@@ -44,6 +44,25 @@
         </select>
     </label>
 
+    <fieldset class="text-sm">
+        <legend class="mb-1 font-medium">Gudang yang ditugaskan</legend>
+        @php
+            $oldWarehouses = old('warehouses');
+            $isChecked = fn ($id) => $oldWarehouses !== null ? in_array((string) $id, array_map('strval', (array) $oldWarehouses), true) : in_array($id, $selectedWarehouses, true);
+        @endphp
+        <div class="space-y-2">
+            @forelse ($warehouses as $warehouse)
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" name="warehouses[]" value="{{ $warehouse->id }}" @checked($isChecked($warehouse->id)) class="h-5 w-5">
+                    <span>{{ $warehouse->name }}</span>
+                </label>
+            @empty
+                <p class="text-slate-500">Belum ada gudang yang bisa Anda tetapkan.</p>
+            @endforelse
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Administrator melihat semua gudang tanpa perlu ditugaskan; pilihan ini dipakai bila rolenya kelak bukan Administrator. User lain hanya melihat dan menerima alert gudang yang dicentang.</p>
+    </fieldset>
+
     <div class="flex flex-col gap-2 pt-1 sm:flex-row">
         <button type="submit" class="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700">Simpan</button>
         <a href="{{ route('users.index') }}" class="rounded-lg bg-white px-6 py-3 text-center font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Batal</a>

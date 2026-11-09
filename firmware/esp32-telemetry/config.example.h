@@ -9,8 +9,8 @@
 // Alamat API Laravel di jaringan lokal. Gunakan IP komputer/server, bukan "localhost".
 #define API_URL "http://192.168.1.10:8000/api/v1/telemetry"
 
-// device_id zona ini dan token-nya (php artisan zone:token gudang-zona-a)
-#define DEVICE_ID "gudang-zona-a"
+// device_id zona ini dan token-nya (menu Gudang di aplikasi, atau php artisan zone:token cikokol-fg)
+#define DEVICE_ID "cikokol-fg"
 #define DEVICE_TOKEN "isi-dengan-token-dari-perintah-zone-token"
 
 // Sensor DHT22 pada pin data berikut

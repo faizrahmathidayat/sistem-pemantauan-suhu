@@ -281,11 +281,11 @@ class UserManagementTest extends TestCase
         $actor = $this->actor();
         $administrator = User::factory()->create(['name' => 'Bos Besar']);
 
-        $this->actingAs($actor)->get('/users/create')->assertOk()->assertDontSee('Administrator');
+        $this->actingAs($actor)->get('/users/create')->assertOk()->assertDontSee('>Administrator</option>', false);
         $this->actingAs($actor)->get('/users')->assertOk()
             ->assertSee('Bos Besar')
             ->assertDontSee("/users/{$administrator->id}/edit", false);
 
-        $this->actingAs(User::factory()->create())->get('/users/create')->assertSee('Administrator');
+        $this->actingAs(User::factory()->create())->get('/users/create')->assertSee('>Administrator</option>', false);
     }
 }

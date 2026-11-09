@@ -24,17 +24,38 @@ PHP 8.4 (ekstensi `openssl pdo_mysql pdo_sqlite sqlite3 mbstring fileinfo curl z
 composer install
 cp .env.example .env          # lalu atur DB_*, ADMIN_EMAIL, ADMIN_PASSWORD
 php artisan key:generate
-php artisan migrate --seed    # membuat tabel, 3 zona contoh, dan akun admin bila ADMIN_* diisi
+php artisan migrate --seed    # membuat tabel, gudang contoh (Cikokol, 3 zona), role awal, dan akun admin bila ADMIN_* diisi
 npm ci && npm run build
 ```
 
-Zona contoh (`gudang-zona-a|b|c`) memakai batas **placeholder**. Sesuaikan dengan kebutuhan penyimpanan sebenarnya:
+## Gudang, zona, dan produk
 
-| Zona | Suhu | Kelembapan |
-|---|---|---|
-| A (Telur) | 10–20°C | 60–85% |
-| B (Sayur Daun) | 15–25°C | 80–95% |
-| C (Buah) | 8–13°C | 85–95% |
+Struktur data: **Gudang → Zona → Produk**.
+
+- **Gudang** hanya punya nama (mis. "Gudang Cikokol (Telur)").
+- **Zona** milik satu gudang: satu sensor ESP32 (`device_id` + token) dan batas suhu/kelembapan sendiri; satu sensor mengawasi semua produk di zona itu.
+- **Produk** adalah daftar nama di dalam zona (tanpa stok atau jumlah), satu nama per baris.
+- **User** di-assign ke satu atau lebih gudang (di form User) dan hanya melihat serta menerima alert gudang itu. **Administrator melihat semua gudang** tanpa perlu di-assign; user non-Administrator tanpa gudang melihat dashboard kosong.
+
+Menambah gudang dan sensor lewat aplikasi (tanpa CLI):
+
+1. Menu **Gudang** (izin `warehouse.manage`) → **+ Gudang**. Pembuat non-Administrator otomatis di-assign ke gudang barunya.
+2. Buka gudang itu → **+ Zona** (izin `zone.manage`): isi nama, `device_id` sensor (huruf kecil, angka, `-`; tidak bisa diubah kemudian), batas suhu/kelembapan, dan produk. Token sensor dibuat otomatis dan **tampil sekali**; salin ke `config.h` firmware. Token hilang? Buat token baru dari halaman **Kelola zona** (token lama langsung tidak berlaku).
+3. Menu **User** → centang gudang untuk tiap user.
+
+Menghapus zona ikut menghapus seluruh pembacaan sensor, insiden, dan produknya (dengan konfirmasi, tidak bisa dibatalkan); gudang hanya bisa dihapus bila tidak punya zona. Dashboard menampilkan chip gudang (status terburuk dan jumlah insiden terbuka), pilihannya tersimpan di alamat halaman (`?gudang=`).
+
+Data contoh dari seeder (`database/seeders/ZoneSeeder.php`) memakai batas **placeholder** untuk Gudang Cikokol (Telur):
+
+| Zona | Device ID | Suhu | Kelembapan |
+|---|---|---|---|
+| Inbound | `cikokol-inbound` | 10–20°C | 60–85% |
+| FG | `cikokol-fg` | 10–20°C | 60–85% |
+| Loading | `cikokol-loading` | 10–20°C | 60–85% |
+
+Instalasi lama yang di-`migrate`: zona yang sudah ada dipindahkan ke gudang bawaan **"Gudang Utama"** (sensor, token, insiden, dan riwayat tetap utuh), jenis produk lama (Telur/Buah/Sayur) menjadi satu produk per zona, dan user non-Administrator di-assign ke gudang itu.
+
+### Batas suhu dan kelembapan
 
 Ubah lewat menu **Batas Zona** di dashboard (`/zones`; perlu izin `zone.update`, perubahan langsung berlaku). Setiap perubahan lewat halaman ini tercatat (siapa, kapan, nilai lama → baru) di menu **Log Perubahan** (`/audit-logs`); mengubah langsung di database atau seeder tidak tercatat. Alternatif: `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`, yang menimpa nilai di database) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
 
@@ -44,7 +65,7 @@ Tidak ada halaman pendaftaran publik. User dibuat oleh administrator lewat menu 
 
 ### Role dan hak akses
 
-Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role dikelola di menu **Role** (`/roles`, izin `role.manage`) dengan kotak centang izin per role. Izin yang tersedia: `dashboard.view`, `incident.view`, `incident.acknowledge`, `notification.view`, `zone.view`, `zone.update`, `auditlog.view`, `user.manage`, `role.manage`.
+Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role dikelola di menu **Role** (`/roles`, izin `role.manage`) dengan kotak centang izin per role. Izin yang tersedia: `dashboard.view`, `incident.view`, `incident.acknowledge`, `notification.view`, `warehouse.manage`, `zone.view`, `zone.update`, `zone.manage`, `auditlog.view`, `user.manage`, `role.manage`. Role menentukan *apa* yang boleh dilakukan; assignment gudang menentukan *di gudang mana*.
 
 | Role awal | Izin |
 |---|---|
@@ -52,7 +73,8 @@ Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role 
 | Supervisor | Dashboard, insiden (lihat dan tandai ditangani), notifikasi, batas zona (lihat dan ubah), log perubahan |
 | Operator | Dashboard, insiden (lihat dan tandai ditangani), notifikasi |
 
-- Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view`.
+- Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view` **dan** (Administrator atau di-assign ke gudang zona itu).
+- User non-Administrator hanya boleh meng-assign gudang yang ia sendiri punya, dan tidak bisa melepas gudang target yang tidak ia punya.
 - Selalu tersisa minimal satu Administrator; Administrator terakhir tidak bisa dihapus atau dipindah role, dan user tidak bisa menghapus akunnya sendiri.
 - Hanya Administrator yang boleh memberi role Administrator atau mengubah/menghapus akun Administrator; user non-Administrator juga tidak bisa mengubah role-nya sendiri.
 - Izin `user.manage` dan `role.manage` bersifat kuat: pemegang `role.manage` bisa memberi role-nya sendiri izin apa pun (kecuali menjadi Administrator). Berikan hanya kepada orang yang dipercaya.
@@ -63,10 +85,10 @@ Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role 
 ```bash
 php artisan user:create "Budi Santoso" budi@example.com    # kata sandi akan ditanyakan; role bawaan Administrator
 php artisan user:create "Sari" sari@example.com --role=Operator
-php artisan zone:token gudang-zona-a                       # token ESP32 zona A, tampil sekali
+php artisan zone:token cikokol-fg                          # token sensor zona FG, tampil sekali
 ```
 
-Menjalankan `zone:token` lagi untuk zona yang sama memutar token (token lama langsung tidak berlaku).
+User yang dibuat lewat CLI belum punya gudang (kecuali Administrator); tetapkan gudangnya lewat menu **User**. Token sensor juga bisa dibuat dari aplikasi (halaman **Kelola zona**). Membuat token lagi untuk zona yang sama memutar token (token lama langsung tidak berlaku).
 
 ## Menjalankan
 
@@ -89,7 +111,7 @@ Lihat [`firmware/esp32-telemetry/README.md`](firmware/esp32-telemetry/README.md)
 curl -X POST http://localhost:8000/api/v1/telemetry \
   -H "Content-Type: application/json" -H "Accept: application/json" \
   -H "Authorization: Bearer <TOKEN>" \
-  -d '{"device_id":"gudang-zona-a","temperature":18.2,"humidity":62.4}'
+  -d '{"device_id":"cikokol-fg","temperature":18.2,"humidity":62.4}'
 ```
 
 Respons: `201` tersimpan, `401` token salah atau `device_id` bukan milik token, `422` data tidak valid (suhu −40..80, kelembapan 0..100), `429` terlalu sering (maks. 20/menit per perangkat).
@@ -114,4 +136,4 @@ php artisan test
 
 ## Batasan versi 1
 
-HTTP tanpa HTTPS (jaringan lokal), tanpa layar admin untuk nama zona/perangkat/token (batas zona sudah bisa diubah), satu role per user (berlaku di semua zona; role per gudang belum ada), tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi.
+HTTP tanpa HTTPS (jaringan lokal), satu role per user (berlaku di semua gudangnya; role per gudang belum ada), produk hanya berupa nama (tanpa stok), `device_id` zona tidak bisa diubah setelah dibuat, tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi.

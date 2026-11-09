@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UserRequest extends FormRequest
 {
@@ -28,7 +29,30 @@ class UserRequest extends FormRequest
             // Saat mengubah user, kata sandi kosong berarti "tidak diganti".
             'password' => [$user === null ? 'required' : 'nullable', 'string', 'min:8'],
             'role_id' => ['required', 'integer', Rule::exists('roles', 'id')],
+            'warehouses' => ['nullable', 'array'],
+            'warehouses.*' => ['integer', Rule::exists('warehouses', 'id')],
         ];
+    }
+
+    /**
+     * User non-Administrator hanya boleh menetapkan gudang yang ia sendiri punya.
+     *
+     * @return array<int, callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($this->user()->isAdministrator()) {
+                return;
+            }
+
+            $allowed = $this->user()->warehouses()->pluck('warehouses.id')->all();
+            foreach ((array) $this->input('warehouses', []) as $index => $id) {
+                if (! $validator->errors()->has("warehouses.{$index}") && ! in_array((int) $id, $allowed, true)) {
+                    $validator->errors()->add("warehouses.{$index}", 'Anda tidak boleh menetapkan gudang ini.');
+                }
+            }
+        }];
     }
 
     /**
@@ -45,6 +69,8 @@ class UserRequest extends FormRequest
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'role_id.required' => 'Pilih role.',
             'role_id.exists' => 'Role tidak ditemukan.',
+            'warehouses.*.exists' => 'Gudang tidak ditemukan.',
+            'warehouses.*.integer' => 'Gudang tidak valid.',
         ];
     }
 }

@@ -19,7 +19,7 @@
     @if ($newToken)
         <section class="mt-3 rounded-xl border-2 border-amber-400 bg-amber-50 p-4">
             <h2 class="font-semibold">Token sensor (hanya tampil sekali)</h2>
-            <p class="mt-1 text-sm text-slate-700">Salin sekarang ke <code>config.h</code> firmware (<code>API_TOKEN</code>). Setelah halaman ini ditutup, token tidak bisa dilihat lagi; bila hilang, buat token baru.</p>
+            <p class="mt-1 text-sm text-slate-700">Salin sekarang ke <code>config.h</code> firmware (<code>DEVICE_TOKEN</code>). Setelah halaman ini ditutup, token tidak bisa dilihat lagi; bila hilang, buat token baru.</p>
             <p class="mt-2 break-all rounded-lg bg-white px-3 py-2 font-mono text-sm select-all">{{ $newToken }}</p>
         </section>
     @endif
