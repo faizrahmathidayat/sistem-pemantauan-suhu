@@ -112,44 +112,37 @@ class UserManagementTest extends TestCase
         $this->assertNotNull($actor->fresh());
     }
 
-    public function test_cannot_delete_the_last_administrator(): void
+    public function test_sole_administrator_cannot_delete_or_demote_themselves(): void
     {
         $administrator = User::factory()->create();
 
-        $this->actingAs($this->actor())->delete("/users/{$administrator->id}")
+        $this->actingAs($administrator)->delete("/users/{$administrator->id}")
             ->assertRedirect()
             ->assertSessionHas('error');
-
         $this->assertNotNull($administrator->fresh());
-    }
 
-    public function test_cannot_demote_the_last_administrator(): void
-    {
-        $administrator = User::factory()->create();
-
-        $this->actingAs($this->actor())->put("/users/{$administrator->id}", $this->payload([
+        $this->actingAs($administrator)->put("/users/{$administrator->id}", $this->payload([
             'name' => $administrator->name, 'email' => $administrator->email, 'password' => '',
             'role_id' => $this->role('Operator')->id,
         ]))->assertSessionHasErrors('role_id');
-
         $this->assertSame(Role::administrator()->id, $administrator->fresh()->role_id);
     }
 
-    public function test_administrator_can_be_demoted_or_deleted_when_another_exists(): void
+    public function test_administrator_can_demote_or_delete_another_administrator_while_one_remains(): void
     {
-        $first = User::factory()->create();
+        $actor = User::factory()->create();
         $second = User::factory()->create();
-        $actor = $this->actor();
+        $third = User::factory()->create();
 
-        $this->actingAs($actor)->put("/users/{$first->id}", $this->payload([
-            'name' => $first->name, 'email' => $first->email, 'password' => '',
+        $this->actingAs($actor)->put("/users/{$second->id}", $this->payload([
+            'name' => $second->name, 'email' => $second->email, 'password' => '',
             'role_id' => $this->role('Operator')->id,
         ]))->assertSessionHasNoErrors();
-        $this->assertSame($this->role('Operator')->id, $first->fresh()->role_id);
+        $this->assertSame($this->role('Operator')->id, $second->fresh()->role_id);
 
-        // Kini $second satu-satunya Administrator: tidak boleh dihapus.
-        $this->actingAs($actor)->delete("/users/{$second->id}")->assertSessionHas('error');
-        $this->assertNotNull($second->fresh());
+        $this->actingAs($actor)->delete("/users/{$third->id}")->assertSessionHas('status');
+        $this->assertNull(User::find($third->id));
+        $this->assertSame(1, User::whereHas('role', fn ($role) => $role->where('is_system', true))->count());
     }
 
     public function test_delete_removes_user_and_keeps_audit_history_name(): void
@@ -227,5 +220,72 @@ class UserManagementTest extends TestCase
         $deleted = AuditLog::where('event', 'user.deleted')->sole();
         $this->assertSame('Sari Dewi', $deleted->subject_label);
         $this->assertSame('sari@example.com', $deleted->diff['email']['from']);
+    }
+
+    public function test_non_administrator_cannot_assign_the_administrator_role(): void
+    {
+        $actor = $this->actor();
+        $victim = User::factory()->withRole($this->role('Operator'))->create();
+
+        $this->actingAs($actor)->post('/users', $this->payload(['role_id' => Role::administrator()->id]))
+            ->assertSessionHasErrors('role_id');
+        $this->assertNull(User::where('email', 'sari@example.com')->first());
+
+        $this->actingAs($actor)->put("/users/{$victim->id}", $this->payload([
+            'name' => $victim->name, 'email' => $victim->email, 'password' => '', 'role_id' => Role::administrator()->id,
+        ]))->assertSessionHasErrors('role_id');
+        $this->assertSame($this->role('Operator')->id, $victim->fresh()->role_id);
+    }
+
+    public function test_non_administrator_cannot_edit_or_delete_an_administrator(): void
+    {
+        $actor = $this->actor();
+        $administrator = User::factory()->create(['password' => 'asli123456']);
+        User::factory()->create(); // Administrator lain, agar penghapusan tidak ditolak karena "terakhir"
+        $hash = $administrator->password;
+
+        $this->actingAs($actor)->get("/users/{$administrator->id}/edit")->assertForbidden();
+        $this->actingAs($actor)->put("/users/{$administrator->id}", $this->payload([
+            'name' => $administrator->name, 'email' => $administrator->email, 'password' => 'diambilalih123',
+            'role_id' => Role::administrator()->id,
+        ]))->assertForbidden();
+        $this->actingAs($actor)->delete("/users/{$administrator->id}")->assertForbidden();
+
+        $administrator->refresh();
+        $this->assertSame($hash, $administrator->password);
+        $this->assertNotNull(User::find($administrator->id));
+    }
+
+    public function test_non_administrator_cannot_change_their_own_role(): void
+    {
+        $actor = $this->actor();
+        $other = Role::factory()->withPermissions(...Permission::cases())->create();
+
+        $this->actingAs($actor)->put("/users/{$actor->id}", $this->payload([
+            'name' => $actor->name, 'email' => $actor->email, 'password' => '', 'role_id' => $other->id,
+        ]))->assertSessionHasErrors('role_id');
+
+        $this->assertNotSame($other->id, $actor->fresh()->role_id);
+    }
+
+    public function test_administrator_can_still_assign_the_administrator_role(): void
+    {
+        $this->actingAs(User::factory()->create())->post('/users', $this->payload(['role_id' => Role::administrator()->id]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(Role::administrator()->id, User::where('email', 'sari@example.com')->sole()->role_id);
+    }
+
+    public function test_forms_and_list_hide_administrator_options_from_non_administrators(): void
+    {
+        $actor = $this->actor();
+        $administrator = User::factory()->create(['name' => 'Bos Besar']);
+
+        $this->actingAs($actor)->get('/users/create')->assertOk()->assertDontSee('Administrator');
+        $this->actingAs($actor)->get('/users')->assertOk()
+            ->assertSee('Bos Besar')
+            ->assertDontSee("/users/{$administrator->id}/edit", false);
+
+        $this->actingAs(User::factory()->create())->get('/users/create')->assertSee('Administrator');
     }
 }

@@ -54,6 +54,8 @@ Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role 
 
 - Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view`.
 - Selalu tersisa minimal satu Administrator; Administrator terakhir tidak bisa dihapus atau dipindah role, dan user tidak bisa menghapus akunnya sendiri.
+- Hanya Administrator yang boleh memberi role Administrator atau mengubah/menghapus akun Administrator; user non-Administrator juga tidak bisa mengubah role-nya sendiri.
+- Izin `user.manage` dan `role.manage` bersifat kuat: pemegang `role.manage` bisa memberi role-nya sendiri izin apa pun (kecuali menjadi Administrator). Berikan hanya kepada orang yang dipercaya.
 - Role yang masih dipakai user tidak bisa dihapus. User tanpa role hanya melihat halaman "belum punya hak akses".
 - Pembuatan, perubahan, dan penghapusan user dan role tercatat di **Log Perubahan** (kata sandi tidak pernah dicatat).
 - Instalasi yang sudah berjalan: `php artisan migrate` membuat role awal dan menjadikan semua user yang ada sebagai Administrator.

@@ -62,6 +62,8 @@ Proyek 2 menambah izin untuk mengelola gudang, zona, dan produk. Menambah izin b
 - Selalu harus tersisa minimal satu user Administrator: user Administrator terakhir tidak bisa dihapus atau dipindah role.
 - User tidak bisa menghapus akunnya sendiri.
 
+**Pencegahan naik hak** **[Saya, ditambahkan setelah review akhir]**: hanya Administrator yang boleh memberi role Administrator, serta mengubah atau menghapus akun Administrator; user non-Administrator tidak bisa mengubah role-nya sendiri. Pemegang `role.manage` tetap bisa memberi role-nya sendiri izin apa pun selain menjadi Administrator, jadi kedua izin pengelolaan ini diberikan hanya kepada orang tepercaya.
+
 **Alert.** Insiden baru dikirim ke user yang rolenya punya `notification.view` **[Saya]** (menggantikan "semua user").
 
 **Halaman awal setelah login** **[Saya]**: dashboard bila punya `dashboard.view`; bila tidak, halaman pertama yang diizinkan menurut urutan menu; bila tidak ada satu pun, halaman "belum punya hak akses" (tanpa pengalihan berulang).
