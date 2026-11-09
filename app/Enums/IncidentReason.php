@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Models\Zone;
+
 enum IncidentReason: string
 {
     case SuhuTinggi = 'suhu_tinggi';
@@ -30,6 +32,23 @@ enum IncidentReason: string
             self::LembapRendah => 'Periksa humidifier dan ventilasi; udara terlalu kering membuat produk layu.',
             self::SensorOffline => 'Periksa daya dan koneksi Wi-Fi perangkat sensor; kondisi gudang saat ini tidak terpantau.',
         };
+    }
+
+    /** Batas zona yang dilanggar oleh alasan ini (null untuk sensor offline). */
+    public function limitFor(Zone $zone): ?float
+    {
+        return match ($this) {
+            self::SuhuTinggi => $zone->temp_max,
+            self::SuhuRendah => $zone->temp_min,
+            self::LembapTinggi => $zone->humidity_max,
+            self::LembapRendah => $zone->humidity_min,
+            self::SensorOffline => null,
+        };
+    }
+
+    public function unit(): string
+    {
+        return $this->isHumidity() ? '%' : '°C';
     }
 
     public function isTemperature(): bool

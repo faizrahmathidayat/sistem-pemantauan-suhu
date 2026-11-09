@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Enums\IncidentReason;
 use App\Models\Incident;
 use App\Models\SensorLog;
 use Illuminate\Notifications\Notification;
@@ -43,13 +42,7 @@ class IncidentOpened extends Notification
             'title' => 'PERINGATAN: '.$reason->label().' di '.$zone->name,
             'temperature' => $this->log?->temperature,
             'humidity' => $this->log?->humidity,
-            'limit' => match ($reason) {
-                IncidentReason::SuhuTinggi => $zone->temp_max,
-                IncidentReason::SuhuRendah => $zone->temp_min,
-                IncidentReason::LembapTinggi => $zone->humidity_max,
-                IncidentReason::LembapRendah => $zone->humidity_min,
-                IncidentReason::SensorOffline => null,
-            },
+            'limit' => $reason->limitFor($zone),
             'occurred_at' => $this->incident->started_at->toIso8601String(),
             'advice' => $reason->advice(),
             'url' => url('/dashboard'),
