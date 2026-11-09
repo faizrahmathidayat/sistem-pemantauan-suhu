@@ -26,7 +26,7 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach ($incidents as $incident)
                         <tr>
-                            <td class="px-4 py-2 font-medium">{{ $incident->zone->name }}</td>
+                            <td class="px-4 py-2 font-medium">{{ $incident->zone->name }}<span class="block text-xs font-normal text-slate-500">{{ $incident->zone->warehouse->name }}</span></td>
                             <td class="px-4 py-2">{{ $incident->reason->label() }}</td>
                             <td class="px-4 py-2">{{ $incident->started_at->format('d M Y H:i') }}</td>
                             <td class="px-4 py-2">{{ $incident->ended_at?->format('d M Y H:i') ?? 'berlangsung' }}</td>
@@ -46,7 +46,7 @@
             @foreach ($incidents as $incident)
                 <li class="rounded-xl bg-white p-3 shadow-sm">
                     <div class="flex items-start justify-between gap-2">
-                        <span class="font-semibold">{{ $incident->zone->name }}</span>
+                        <span class="font-semibold">{{ $incident->zone->name }}<span class="block text-xs font-normal text-slate-500">{{ $incident->zone->warehouse->name }}</span></span>
                         <span class="text-sm font-medium text-slate-600">{{ $incident->durationLabel() }}</span>
                     </div>
                     <p class="text-sm text-slate-600">{{ $incident->reason->label() }} · puncak {{ $peak($incident) }}</p>

@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Console\Commands\CheckOfflineZones;
 use App\Enums\IncidentReason;
 use App\Enums\Permission;
+use App\Enums\ZoneStatus;
 use App\Models\Incident;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Models\Zone;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -21,13 +23,13 @@ final class DashboardSnapshot
     public function __construct(private ZoneStatusEvaluator $evaluator) {}
 
     /**
-     * @return array{zones: list<array<string, mixed>>, banners: list<array<string, mixed>>, unread_notifications: int, can_acknowledge: bool, scheduler_stale: bool}
+     * @return array{zones: list<array<string, mixed>>, warehouses: list<array<string, mixed>>, banners: list<array<string, mixed>>, unread_notifications: int, can_acknowledge: bool, has_access: bool, scheduler_stale: bool}
      */
     public function build(User $user): array
     {
         $now = now();
 
-        $zones = Zone::visibleTo($user)->with(['latestLog', 'products'])->orderBy('name')->get()
+        $rows = Zone::visibleTo($user)->with(['latestLog', 'products', 'warehouse'])->orderBy('name')->get()
             ->map(function (Zone $zone) use ($now): array {
                 $log = $zone->latestLog;
                 $status = $this->evaluator->forZone($zone, $now);
@@ -36,6 +38,7 @@ final class DashboardSnapshot
                     'id' => $zone->id,
                     'name' => $zone->name,
                     'warehouse_id' => $zone->warehouse_id,
+                    'warehouse_name' => $zone->warehouse->name,
                     'products' => $zone->products->pluck('name')->all(),
                     'status' => $status->value,
                     'temperature' => $log?->temperature,
@@ -51,25 +54,41 @@ final class DashboardSnapshot
                 ];
             })
             ->sortBy([['_severity', 'asc'], ['name', 'asc']])
-            ->map(fn (array $row) => array_diff_key($row, ['_severity' => true]))
-            ->values()
-            ->all();
+            ->values();
 
-        $banners = Incident::open()->visibleTo($user)->with(['zone.latestLog', 'acknowledger'])->orderBy('started_at')->get()
-            ->map(fn (Incident $incident): array => [
-                'incident_id' => $incident->id,
-                'zone_name' => $incident->zone->name,
-                'kind' => $incident->reason === IncidentReason::SensorOffline ? 'offline' : 'kritis',
-                'message' => $this->message($incident),
-                'started_at' => $incident->started_at->toIso8601String(),
-                'acknowledged_by' => $incident->acknowledger?->name,
-            ])->all();
+        $incidents = Incident::open()->visibleTo($user)->with(['zone.warehouse', 'zone.latestLog', 'acknowledger'])->orderBy('started_at')->get();
+
+        $banners = $incidents->map(fn (Incident $incident): array => [
+            'incident_id' => $incident->id,
+            'zone_name' => $incident->zone->name,
+            'warehouse_name' => $incident->zone->warehouse->name,
+            'location' => $incident->zone->warehouse->name.' › '.$incident->zone->name,
+            'kind' => $incident->reason === IncidentReason::SensorOffline ? 'offline' : 'kritis',
+            'message' => $this->message($incident),
+            'started_at' => $incident->started_at->toIso8601String(),
+            'acknowledged_by' => $incident->acknowledger?->name,
+        ])->all();
+
+        $warehouses = Warehouse::visibleTo($user)->orderBy('name')->get()
+            ->map(function (Warehouse $warehouse) use ($rows, $incidents): array {
+                $zoneRows = $rows->where('warehouse_id', $warehouse->id);
+
+                return [
+                    'id' => $warehouse->id,
+                    'name' => $warehouse->name,
+                    // Status terburuk (severity terkecil) di antara zona gudang ini.
+                    'status' => $zoneRows->isEmpty() ? ZoneStatus::TanpaData->value : $zoneRows->sortBy('_severity')->first()['status'],
+                    'open_incidents' => $incidents->filter(fn (Incident $i) => $i->zone->warehouse_id === $warehouse->id)->count(),
+                ];
+            })->values()->all();
 
         return [
-            'zones' => $zones,
+            'zones' => $rows->map(fn (array $row) => array_diff_key($row, ['_severity' => true]))->all(),
+            'warehouses' => $warehouses,
             'banners' => $banners,
             'unread_notifications' => $user->unreadNotifications()->count(),
             'can_acknowledge' => $user->hasPermission(Permission::IncidentAcknowledge),
+            'has_access' => $user->isAdministrator() || $user->warehouses()->exists(),
             'scheduler_stale' => $this->schedulerStale($now),
         ];
     }

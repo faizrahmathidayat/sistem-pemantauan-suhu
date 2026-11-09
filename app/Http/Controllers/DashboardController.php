@@ -13,7 +13,7 @@ class DashboardController extends Controller
     {
         return view('dashboard', [
             'snapshot' => $snapshot->build($request->user()),
-            'recentIncidents' => Incident::visibleTo($request->user())->with(['zone', 'acknowledger'])->latest('started_at')->limit(5)->get(),
+            'recentIncidents' => Incident::visibleTo($request->user())->with(['zone.warehouse', 'acknowledger'])->latest('started_at')->limit(5)->get(),
         ]);
     }
 }

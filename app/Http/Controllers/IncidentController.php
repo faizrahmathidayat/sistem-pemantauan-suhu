@@ -12,7 +12,7 @@ class IncidentController extends Controller
     {
         return view('incidents.index', [
             'incidents' => Incident::visibleTo($request->user())
-                ->with(['zone', 'acknowledger'])->latest('started_at')->paginate(15),
+                ->with(['zone.warehouse', 'acknowledger'])->latest('started_at')->paginate(15),
         ]);
     }
 }

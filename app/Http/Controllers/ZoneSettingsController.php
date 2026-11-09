@@ -14,7 +14,8 @@ class ZoneSettingsController extends Controller
     public function index(): View
     {
         return view('zones.index', [
-            'zones' => Zone::visibleTo(request()->user())->with(['warehouse', 'products'])->orderBy('name')->get(),
+            'zones' => Zone::visibleTo(request()->user())->with(['warehouse', 'products'])->get()
+                ->sortBy([['warehouse.name', 'asc'], ['name', 'asc']])->values(),
         ]);
     }
 

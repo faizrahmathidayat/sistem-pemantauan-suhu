@@ -9,17 +9,18 @@ const urls = {
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 let state = JSON.parse(document.getElementById('dashboard-data').textContent);
+let selectedWarehouse = 'all'; // 'all' atau id gudang
 let selectedZoneId = null;
 let metric = 'temperature';
 let chart = null;
 let chartTick = 0;
 
 const STATUS = {
-    aman: { label: 'AMAN', border: 'border-emerald-500', badge: 'bg-emerald-100 text-emerald-800' },
-    waspada: { label: 'WASPADA', border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-800' },
-    bahaya: { label: 'BAHAYA', border: 'border-red-600', badge: 'bg-red-100 text-red-800', pulse: true },
-    offline: { label: 'OFFLINE', border: 'border-slate-400', badge: 'bg-slate-200 text-slate-700' },
-    tanpa_data: { label: 'BELUM ADA DATA', border: 'border-slate-300', badge: 'bg-slate-100 text-slate-600' },
+    aman: { label: 'AMAN', border: 'border-emerald-500', badge: 'bg-emerald-100 text-emerald-800', dot: '🟢' },
+    waspada: { label: 'WASPADA', border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-800', dot: '🟡' },
+    bahaya: { label: 'BAHAYA', border: 'border-red-600', badge: 'bg-red-100 text-red-800', pulse: true, dot: '🔴' },
+    offline: { label: 'OFFLINE', border: 'border-slate-400', badge: 'bg-slate-200 text-slate-700', dot: '⚪' },
+    tanpa_data: { label: 'BELUM ADA DATA', border: 'border-slate-300', badge: 'bg-slate-100 text-slate-600', dot: '⚪' },
 };
 
 const esc = (value) =>
@@ -34,6 +35,63 @@ function ago(seconds) {
     return `${Math.floor(seconds / 3600)} jam lalu`;
 }
 
+// Gudang yang dipilih: dari ?gudang=ID bila valid; selain itu "semua" (atau gudang tunggal).
+function initialWarehouse() {
+    const param = new URLSearchParams(window.location.search).get('gudang');
+    if (param !== null && state.warehouses.some((w) => String(w.id) === param)) return Number(param);
+    return state.warehouses.length === 1 ? state.warehouses[0].id : 'all';
+}
+
+function ensureValidWarehouse() {
+    if (selectedWarehouse !== 'all' && !state.warehouses.some((w) => w.id === selectedWarehouse)) {
+        selectedWarehouse = state.warehouses.length === 1 ? state.warehouses[0].id : 'all';
+    }
+}
+
+function visibleZones() {
+    return selectedWarehouse === 'all' ? state.zones : state.zones.filter((z) => z.warehouse_id === selectedWarehouse);
+}
+
+function worstStatus() {
+    const order = ['bahaya', 'waspada', 'offline', 'tanpa_data', 'aman'];
+    const found = order.find((s) => state.warehouses.some((w) => w.status === s));
+    return found ?? 'tanpa_data';
+}
+
+function renderAccessNotice() {
+    let notice = document.getElementById('no-access-notice');
+    if (state.has_access) {
+        notice?.remove();
+        return;
+    }
+    if (!notice) {
+        notice = document.createElement('p');
+        notice.id = 'no-access-notice';
+        notice.className = 'mb-3 rounded-lg bg-slate-200 px-3 py-2 text-sm text-slate-700';
+        notice.textContent = 'Anda belum ditugaskan ke gudang mana pun. Hubungi administrator.';
+        document.getElementById('warehouse-chips').before(notice);
+    }
+}
+
+function renderWarehouseChips() {
+    const holder = document.getElementById('warehouse-chips');
+    if (state.warehouses.length === 0) {
+        holder.innerHTML = '';
+        return;
+    }
+
+    const chip = (key, label, status, open) => {
+        const active = String(selectedWarehouse) === String(key) ? 'chip-active' : '';
+        const badge = open > 0 ? ` <span class="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">${open}</span>` : '';
+        return `<button type="button" data-warehouse="${key}" class="chip ${active}">${(STATUS[status] ?? STATUS.tanpa_data).dot} ${esc(label)}${badge}</button>`;
+    };
+
+    const all = state.warehouses.length > 1
+        ? chip('all', 'Semua gudang', worstStatus(), state.warehouses.reduce((sum, w) => sum + w.open_incidents, 0))
+        : '';
+    holder.innerHTML = all + state.warehouses.map((w) => chip(w.id, w.name, w.status, w.open_incidents)).join('');
+}
+
 function renderBanners() {
     const html = state.banners
         .map((b) => {
@@ -45,9 +103,10 @@ function renderBanners() {
                 'offline-true': 'bg-stone-500 text-white',
             }[`${b.kind}-${acknowledged}`];
             const icon = b.kind === 'kritis' ? '🚨' : '📡';
+            const where = `<strong>${esc(b.location)}</strong> — ${esc(b.message)}`;
             const text = acknowledged
-                ? `🛠️ Sedang ditangani oleh <strong>${esc(b.acknowledged_by)}</strong>. ${esc(b.message)}`
-                : `${icon} <strong>${b.kind === 'kritis' ? 'KRITIS:' : 'SENSOR OFFLINE:'}</strong> ${esc(b.message)}`;
+                ? `🛠️ Sedang ditangani oleh <strong>${esc(b.acknowledged_by)}</strong>. ${where}`
+                : `${icon} <strong>${b.kind === 'kritis' ? 'KRITIS:' : 'SENSOR OFFLINE:'}</strong> ${where}`;
             const button = acknowledged || !state.can_acknowledge
                 ? ''
                 : `<button type="button" data-ack="${b.incident_id}" class="w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow sm:w-auto">Tandai Telah Ditangani</button>`;
@@ -60,12 +119,17 @@ function renderBanners() {
 
 function renderZones() {
     const container = document.getElementById('zones');
-    if (state.zones.length === 0) {
-        container.innerHTML = '<p class="rounded-xl bg-white p-4 text-slate-500">Belum ada zona terdaftar.</p>';
+    const zones = visibleZones();
+    if (zones.length === 0) {
+        container.innerHTML = state.has_access
+            ? '<p class="rounded-xl bg-white p-4 text-slate-500">Belum ada zona terdaftar di gudang ini.</p>'
+            : '';
         return;
     }
 
-    container.innerHTML = state.zones
+    const showWarehouse = selectedWarehouse === 'all' && state.warehouses.length > 1;
+
+    container.innerHTML = zones
         .map((z) => {
             const s = STATUS[z.status] ?? STATUS.tanpa_data;
             const danger = z.status === 'bahaya';
@@ -88,10 +152,14 @@ function renderZones() {
             const humidityBound = z.humidity_trend === 'naik'
                 ? ` (Max: ${num(z.humidity_max)}%)`
                 : z.humidity_trend === 'turun' ? ` (Min: ${num(z.humidity_min)}%)` : '';
+            const products = z.products.length > 0
+                ? `<div class="mt-2 flex flex-wrap gap-1">${z.products.map((p) => `<span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">${esc(p)}</span>`).join('')}</div>`
+                : '';
+            const warehouseLabel = showWarehouse ? `<p class="text-xs text-slate-500">${esc(z.warehouse_name)}</p>` : '';
 
             return `<article class="rounded-xl border-l-8 ${s.border} bg-white p-4 shadow-sm ${danger ? 'ring-2 ring-red-200' : ''}">
                 <div class="flex items-center justify-between gap-2">
-                    <h3 class="font-semibold">${esc(z.name)}</h3>
+                    <div><h3 class="font-semibold">${esc(z.name)}</h3>${warehouseLabel}</div>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${s.badge}">${dot}${s.label}</span>
                 </div>
                 <div class="mt-2 flex flex-wrap items-baseline gap-2">
@@ -100,6 +168,7 @@ function renderZones() {
                 </div>
                 <p class="mt-1 text-sm text-slate-500">💧 <span class="${humidityClass}">${num(z.humidity)}%${humidityArrow}${humidityBound}</span>${humidityLimit}</p>
                 <p class="text-xs text-slate-400">update ${ago(z.last_seen_seconds)}</p>
+                ${products}
             </article>`;
         })
         .join('');
@@ -115,10 +184,11 @@ function renderChrome() {
 
 function renderZoneChips() {
     const holder = document.getElementById('chart-zone-chips');
-    if (selectedZoneId === null || !state.zones.some((z) => z.id === selectedZoneId)) {
-        selectedZoneId = state.zones[0]?.id ?? null;
+    const zones = visibleZones();
+    if (selectedZoneId === null || !zones.some((z) => z.id === selectedZoneId)) {
+        selectedZoneId = zones[0]?.id ?? null;
     }
-    holder.innerHTML = state.zones
+    holder.innerHTML = zones
         .map((z) => `<button type="button" data-zone="${z.id}" class="chip ${z.id === selectedZoneId ? 'chip-active' : ''}">${esc(z.name)}</button>`)
         .join('');
 }
@@ -171,6 +241,8 @@ async function loadChart() {
 }
 
 function render() {
+    renderAccessNotice();
+    renderWarehouseChips();
     renderBanners();
     renderZones();
     renderChrome();
@@ -191,6 +263,7 @@ async function refresh() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         state = await response.json();
         warning.hidden = true;
+        ensureValidWarehouse();
         render();
         renderZoneChips();
         if (++chartTick % 4 === 0) await loadChart();
@@ -211,6 +284,23 @@ document.getElementById('banners').addEventListener('click', async (event) => {
     await refresh();
 });
 
+document.getElementById('warehouse-chips').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-warehouse]');
+    if (!button) return;
+    selectedWarehouse = button.dataset.warehouse === 'all' ? 'all' : Number(button.dataset.warehouse);
+
+    // Simpan pilihan di alamat halaman agar bisa dibagikan.
+    const url = new URL(window.location.href);
+    if (selectedWarehouse === 'all') url.searchParams.delete('gudang');
+    else url.searchParams.set('gudang', selectedWarehouse);
+    window.history.replaceState(null, '', url);
+
+    renderWarehouseChips();
+    renderZones();
+    renderZoneChips();
+    loadChart();
+});
+
 document.getElementById('chart-zone-chips').addEventListener('click', (event) => {
     const button = event.target.closest('button[data-zone]');
     if (!button) return;
@@ -227,6 +317,7 @@ document.getElementById('chart-metric-chips').addEventListener('click', (event) 
     loadChart();
 });
 
+selectedWarehouse = initialWarehouse();
 render();
 renderZoneChips();
 loadChart();

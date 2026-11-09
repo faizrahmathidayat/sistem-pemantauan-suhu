@@ -20,6 +20,15 @@
             Koneksi ke server terputus, mencoba lagi…
         </p>
 
+        @unless ($snapshot['has_access'])
+            <p id="no-access-notice" class="mb-3 rounded-lg bg-slate-200 px-3 py-2 text-sm text-slate-700">
+                Anda belum ditugaskan ke gudang mana pun. Hubungi administrator.
+            </p>
+        @endunless
+
+        {{-- Chip gudang (status terburuk + jumlah insiden terbuka); diisi dashboard.js --}}
+        <div id="warehouse-chips" class="mb-3 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" aria-label="Pilih gudang"></div>
+
         {{-- Kartu zona: satu kolom di HP (zona bahaya paling atas), tiga kolom di desktop --}}
         <section id="zones" class="grid gap-3 md:grid-cols-3"></section>
 
@@ -42,7 +51,7 @@
             <ul class="mt-2 divide-y divide-slate-100 text-sm">
                 @forelse ($recentIncidents as $incident)
                     <li class="flex flex-wrap items-center justify-between gap-x-3 py-2">
-                        <span class="font-medium">{{ $incident->zone->name }} · {{ $incident->reason->label() }}</span>
+                        <span class="font-medium">{{ $incident->zone->warehouse->name }} › {{ $incident->zone->name }} · {{ $incident->reason->label() }}</span>
                         <span class="text-slate-500">
                             {{ $incident->started_at->format('d M H:i') }}
                             @if ($incident->isOpen()) · berlangsung @else · selesai {{ $incident->ended_at->format('H:i') }} @endif

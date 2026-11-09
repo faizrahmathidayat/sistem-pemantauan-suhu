@@ -135,10 +135,10 @@ final class IncidentManager
     {
         // Hanya user yang rolenya boleh menerima notifikasi dan yang punya akses ke gudang zona ini
         // (Administrator selalu memenuhi keduanya).
-        $incident->loadMissing('zone');
+        $incident->loadMissing('zone.warehouse');
         Notification::send(
             User::withPermission(Permission::NotificationView)->withWarehouseAccess($incident->zone->warehouse_id)->get(),
-            new IncidentOpened($incident->loadMissing('zone'), $log),
+            new IncidentOpened($incident, $log),
         );
     }
 }

@@ -46,7 +46,8 @@ class NotificationPageTest extends TestCase
         $this->notify($user, 'Zona Sayur');
 
         $this->actingAs($user)->get('/notifications')
-            ->assertSee('Suhu terlalu tinggi di Zona Sayur')
+            ->assertSee('Suhu terlalu tinggi di Gudang')
+            ->assertSee('› Zona Sayur')
             ->assertSee('exhaust');
     }
 
