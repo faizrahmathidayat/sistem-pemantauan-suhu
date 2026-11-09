@@ -9,6 +9,7 @@ use App\Models\Zone;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -45,11 +46,14 @@ class ZoneManagementController extends Controller
             ->with('new_token', $token);
     }
 
-    public function manage(Request $request, Zone $zone): View
+    public function manage(Request $request, Zone $zone): Response
     {
         abort_unless($request->user()->canAccessZone($zone), 403);
 
-        return view('zones.manage', ['zone' => $zone->load(['warehouse', 'products'])]);
+        // no-store: token sekali-tampil tidak boleh muncul lagi dari cache browser lewat tombol Back.
+        return response()
+            ->view('zones.manage', ['zone' => $zone->load(['warehouse', 'products'])])
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function update(ZoneManagementRequest $request, Zone $zone, AuditLogger $audit): RedirectResponse

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateZoneRequest;
+use App\Models\Warehouse;
 use App\Models\Zone;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,11 @@ class ZoneSettingsController extends Controller
 {
     public function index(): View
     {
+        // Semua gudang yang boleh dilihat (juga yang belum punya zona, agar zona pertama bisa ditambahkan).
         return view('zones.index', [
-            'zones' => Zone::visibleTo(request()->user())->with(['warehouse', 'products'])->get()
-                ->sortBy([['warehouse.name', 'asc'], ['name', 'asc']])->values(),
+            'warehouses' => Warehouse::visibleTo(request()->user())
+                ->with(['zones' => fn ($zones) => $zones->with('products')->orderBy('name')])
+                ->orderBy('name')->get(),
         ]);
     }
 

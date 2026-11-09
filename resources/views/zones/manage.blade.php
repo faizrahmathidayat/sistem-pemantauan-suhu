@@ -8,7 +8,11 @@
         $newToken = session('new_token');
     @endphp
 
-    <a href="{{ route('zones.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← Batas Zona</a>
+    @can('zone.view')
+        <a href="{{ route('zones.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← Batas Zona</a>
+    @else
+        <a href="{{ route('home') }}" class="text-sm text-slate-500 hover:text-slate-800">← Beranda</a>
+    @endcan
     <h1 class="mt-1 text-lg font-semibold">Kelola zona {{ $zone->name }}</h1>
     <p class="text-sm text-slate-500">{{ $zone->warehouse->name }} · sensor <code>{{ $zone->device_id }}</code></p>
 

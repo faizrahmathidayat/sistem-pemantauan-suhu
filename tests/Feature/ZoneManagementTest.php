@@ -242,4 +242,27 @@ class ZoneManagementTest extends TestCase
 
         $this->assertStringNotContainsString($token, AuditLog::all()->toJson());
     }
+
+    public function test_manage_page_is_never_cached_so_the_token_cannot_reappear_via_back_navigation(): void
+    {
+        [$zone] = $this->createZone($actor = $this->actor());
+
+        $response = $this->actingAs($actor)->get("/zones/{$zone->id}/manage")->assertOk();
+
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    public function test_zone_list_offers_zone_creation_to_zone_managers_without_warehouse_manage(): void
+    {
+        $empty = Warehouse::factory()->create(['name' => 'Gudang Kosong']);
+        $user = User::factory()->withPermissions(Permission::ZoneView, Permission::ZoneManage)->assignedTo($empty)->create();
+
+        $this->actingAs($user)->get('/zones')
+            ->assertOk()
+            ->assertSee('Gudang Kosong')
+            ->assertSee("/warehouses/{$empty->id}/zones/create", false);
+
+        $viewOnly = User::factory()->withPermissions(Permission::ZoneView)->assignedTo($empty)->create();
+        $this->actingAs($viewOnly)->get('/zones')->assertOk()->assertDontSee('/zones/create', false);
+    }
 }

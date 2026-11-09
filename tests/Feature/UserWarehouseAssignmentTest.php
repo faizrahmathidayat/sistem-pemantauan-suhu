@@ -111,19 +111,55 @@ class UserWarehouseAssignmentTest extends TestCase
             ->assertSessionHasErrors('warehouses.0');
     }
 
-    public function test_non_administrator_edit_keeps_assignments_it_cannot_see(): void
+    public function test_non_administrator_cannot_manage_users_assigned_to_warehouses_they_lack(): void
     {
         $actor = $this->manager($this->a);
-        $target = User::factory()->withRole($this->operatorRole())->assignedTo($this->a, $this->b)->create();
-        $base = ['name' => $target->name, 'email' => $target->email, 'password' => ''];
 
-        // Menyimpan dengan A saja tidak melepas B yang tak terlihat oleh pelaku.
-        $this->actingAs($actor)->put("/users/{$target->id}", $this->payload($base + ['warehouses' => [$this->a->id]]))->assertSessionHasNoErrors();
-        $this->assertSame([$this->a->id, $this->b->id], $this->assigned($target));
+        foreach ([[$this->b], [$this->a, $this->b]] as $warehouses) {
+            $target = User::factory()->withRole($this->operatorRole())->assignedTo(...$warehouses)->create(['password' => 'asli123456']);
+            $hash = $target->password;
 
-        // Menghapus centang A hanya melepas A.
-        $this->actingAs($actor)->put("/users/{$target->id}", $this->payload($base))->assertSessionHasNoErrors();
-        $this->assertSame([$this->b->id], $this->assigned($target));
+            $this->actingAs($actor)->get("/users/{$target->id}/edit")->assertForbidden();
+            $this->actingAs($actor)->put("/users/{$target->id}", $this->payload([
+                'name' => $target->name, 'email' => $target->email, 'password' => 'diambilalih123', 'warehouses' => [$this->a->id],
+            ]))->assertForbidden();
+            $this->actingAs($actor)->delete("/users/{$target->id}")->assertForbidden();
+
+            $this->assertSame($hash, $target->fresh()->password);
+            $this->assertSame(array_map(fn (Warehouse $w) => $w->id, $warehouses), $this->assigned($target));
+        }
+    }
+
+    public function test_non_administrator_can_manage_users_inside_own_warehouses_or_without_any(): void
+    {
+        $actor = $this->manager($this->a);
+        $inside = User::factory()->withRole($this->operatorRole())->assignedTo($this->a)->create();
+        $none = User::factory()->withRole($this->operatorRole())->create();
+
+        foreach ([$inside, $none] as $target) {
+            $this->actingAs($actor)->get("/users/{$target->id}/edit")->assertOk();
+            $this->actingAs($actor)->put("/users/{$target->id}", $this->payload([
+                'name' => 'Diubah', 'email' => $target->email, 'password' => '', 'warehouses' => [$this->a->id],
+            ]))->assertSessionHasNoErrors();
+            $this->assertSame('Diubah', $target->fresh()->name);
+        }
+    }
+
+    public function test_user_list_hides_other_warehouse_users_from_non_administrators(): void
+    {
+        $actor = $this->manager($this->a);
+        User::factory()->withRole($this->operatorRole())->assignedTo($this->a)->create(['name' => 'Orang Gudang A']);
+        User::factory()->withRole($this->operatorRole())->assignedTo($this->b)->create(['name' => 'Orang Gudang B']);
+        User::factory()->withRole($this->operatorRole())->create(['name' => 'Orang Tanpa Gudang']);
+        User::factory()->create(['name' => 'Bos Besar']);
+
+        $this->actingAs($actor)->get('/users')->assertOk()
+            ->assertSee('Orang Gudang A')
+            ->assertSee('Orang Tanpa Gudang')
+            ->assertSee('Bos Besar')
+            ->assertDontSee('Orang Gudang B');
+
+        $this->actingAs(User::factory()->create())->get('/users')->assertSee('Orang Gudang B');
     }
 
     public function test_warehouse_checkboxes_show_only_assignable_warehouses(): void

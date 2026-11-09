@@ -14,10 +14,15 @@
         <p role="status" class="mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✅ {{ session('status') }}</p>
     @endif
 
-    @forelse ($zones->groupBy(fn ($zone) => $zone->warehouse->name) as $warehouseName => $warehouseZones)
-        <h2 class="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">{{ $warehouseName }}</h2>
+    @forelse ($warehouses as $warehouse)
+        <div class="mt-5 flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">{{ $warehouse->name }}</h2>
+            @can('zone.manage')
+                <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="rounded-lg bg-white px-3 py-1.5 text-xs font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">+ Zona</a>
+            @endcan
+        </div>
         <ul class="mt-2 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            @foreach ($warehouseZones as $zone)
+            @forelse ($warehouse->zones as $zone)
                 <li class="rounded-xl bg-white p-4 shadow-sm">
                     <div class="flex items-start justify-between gap-2">
                         <div>
@@ -53,9 +58,11 @@
                         </div>
                     </dl>
                 </li>
-            @endforeach
+            @empty
+                <li class="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Belum ada zona di gudang ini.</li>
+            @endforelse
         </ul>
     @empty
-        <p class="mt-3 rounded-xl bg-white p-4 text-slate-500 shadow-sm">Belum ada zona yang bisa Anda lihat.</p>
+        <p class="mt-3 rounded-xl bg-white p-4 text-slate-500 shadow-sm">Belum ada gudang yang bisa Anda lihat.</p>
     @endforelse
 @endsection

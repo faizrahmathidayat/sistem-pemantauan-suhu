@@ -20,13 +20,17 @@ class UserController extends Controller
 
     public function index(Request $request): View
     {
-        return view('users.index', [
-            'users' => User::with(['role', 'warehouses'])->orderBy('name')->get(),
-            // null = Administrator melihat semua; selain itu hanya gudang miliknya yang boleh dibaca namanya.
-            'visibleWarehouseIds' => $request->user()->isAdministrator()
-                ? null
-                : $request->user()->warehouses()->pluck('warehouses.id')->all(),
-        ]);
+        $actor = $request->user();
+        // null = Administrator melihat semua; selain itu hanya gudang miliknya yang boleh dibaca namanya.
+        $visibleWarehouseIds = $actor->isAdministrator() ? null : $actor->warehouses()->pluck('warehouses.id')->all();
+
+        $users = User::with(['role', 'warehouses'])->orderBy('name')->get();
+        if ($visibleWarehouseIds !== null) {
+            // User gudang lain disembunyikan; akun Administrator tetap tampil (tanpa tombol ubah/hapus).
+            $users = $users->filter(fn (User $user) => $user->isAdministrator() || $this->mayManage($actor, $user, $visibleWarehouseIds))->values();
+        }
+
+        return view('users.index', ['users' => $users, 'visibleWarehouseIds' => $visibleWarehouseIds]);
     }
 
     public function create(Request $request): View
@@ -152,10 +156,31 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('status', "User {$user->name} dihapus.");
     }
 
-    /** Akun Administrator hanya boleh diubah atau dihapus oleh Administrator. */
+    /**
+     * Administrator boleh mengelola semua user. User lain hanya boleh mengelola user yang gudangnya
+     * seluruhnya termasuk gudang miliknya (atau yang belum punya gudang), dan tidak pernah akun
+     * Administrator. Tanpa batas ini, pemegang user.manage di satu gudang bisa mengganti kata sandi
+     * user gudang lain lalu masuk sebagai dia.
+     *
+     * @param  list<int>|null  $actorWarehouseIds  isi bila sudah dihitung (hindari query berulang)
+     */
+    private function mayManage(User $actor, User $target, ?array $actorWarehouseIds = null): bool
+    {
+        if ($actor->isAdministrator()) {
+            return true;
+        }
+        if ($target->isAdministrator()) {
+            return false;
+        }
+
+        $allowed = $actorWarehouseIds ?? $actor->warehouses()->pluck('warehouses.id')->all();
+
+        return $target->warehouses->pluck('id')->diff($allowed)->isEmpty();
+    }
+
     private function ensureMayManage(Request $request, User $target): void
     {
-        abort_if($target->isAdministrator() && ! $request->user()->isAdministrator(), 403);
+        abort_unless($this->mayManage($request->user(), $target), 403);
     }
 
     /** Role yang boleh dipilih pelaku: role sistem (Administrator) hanya ditawarkan kepada Administrator. */

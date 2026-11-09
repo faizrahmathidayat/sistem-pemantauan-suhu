@@ -57,18 +57,25 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Catatan: rollback tidak memulihkan data. Zona kembali tanpa gudang dan produk, dan semua zona
+     * mendapat product_type bawaan 'sayur'.
+     */
     public function down(): void
     {
+        // MySQL memakai indeks unik [warehouse_id, name] sebagai indeks FK, jadi FK harus dilepas lebih
+        // dulu; kalau tidak, menghapus indeks itu gagal (error 1553) dan rollback berhenti di tengah.
+        if (! $this->isSqlite()) {
+            Schema::table('zones', function (Blueprint $table) {
+                $table->dropForeign(['warehouse_id']);
+            });
+        }
         Schema::table('zones', function (Blueprint $table) {
             $table->dropUnique(['warehouse_id', 'name']);
         });
         Schema::table('zones', function (Blueprint $table) {
             $table->string('product_type')->default('sayur');
-            if ($this->isSqlite()) {
-                $table->dropColumn('warehouse_id');
-            } else {
-                $table->dropConstrainedForeignId('warehouse_id');
-            }
+            $table->dropColumn('warehouse_id');
         });
         Schema::dropIfExists('zone_products');
         Schema::dropIfExists('warehouse_user');

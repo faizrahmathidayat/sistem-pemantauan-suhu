@@ -74,7 +74,7 @@ Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role 
 | Operator | Dashboard, insiden (lihat dan tandai ditangani), notifikasi |
 
 - Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view` **dan** (Administrator atau di-assign ke gudang zona itu).
-- User non-Administrator hanya boleh meng-assign gudang yang ia sendiri punya, dan tidak bisa melepas gudang target yang tidak ia punya.
+- User non-Administrator (pemegang `user.manage`) hanya boleh meng-assign gudang yang ia sendiri punya, dan hanya boleh melihat, mengubah, atau menghapus user yang seluruh gudangnya termasuk gudang miliknya (atau yang belum punya gudang). User gudang lain tidak tampil di daftar dan tidak bisa disentuh; kalau tidak, ia bisa mengganti kata sandi user itu lalu masuk sebagai dia.
 - Selalu tersisa minimal satu Administrator; Administrator terakhir tidak bisa dihapus atau dipindah role, dan user tidak bisa menghapus akunnya sendiri.
 - Hanya Administrator yang boleh memberi role Administrator atau mengubah/menghapus akun Administrator; user non-Administrator juga tidak bisa mengubah role-nya sendiri.
 - Izin `user.manage` dan `role.manage` bersifat kuat: pemegang `role.manage` bisa memberi role-nya sendiri izin apa pun (kecuali menjadi Administrator). Berikan hanya kepada orang yang dipercaya.
