@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ProductType;
+use App\Models\Warehouse;
 use App\Models\Zone;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -15,7 +15,7 @@ class ZoneFactory extends Factory
     {
         return [
             'name' => 'Zona '.fake()->unique()->lexify('??'),
-            'product_type' => ProductType::Sayur,
+            'warehouse_id' => Warehouse::factory(),
             'device_id' => 'gudang-'.fake()->unique()->slug(2),
             'device_token_hash' => null,
             'temp_min' => 15,

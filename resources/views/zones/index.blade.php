@@ -20,7 +20,10 @@
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <h2 class="font-semibold">{{ $zone->name }}</h2>
-                        <p class="text-xs text-slate-500">{{ $zone->product_type->label() }} · {{ $zone->device_id }}</p>
+                        <p class="text-xs text-slate-500">{{ $zone->warehouse->name }} · {{ $zone->device_id }}</p>
+                        @if ($zone->products->isNotEmpty())
+                            <p class="text-xs text-slate-500">{{ $zone->products->pluck('name')->implode(', ') }}</p>
+                        @endif
                     </div>
                     <a href="{{ route('zones.edit', $zone) }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Ubah</a>
                 </div>

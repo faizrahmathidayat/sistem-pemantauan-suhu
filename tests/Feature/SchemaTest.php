@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Incident;
 use App\Models\SensorLog;
+use App\Models\Warehouse;
 use App\Models\Zone;
 use Database\Seeders\ZoneSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,14 +44,17 @@ class SchemaTest extends TestCase
         $this->assertTrue($open->isOpen());
     }
 
-    public function test_seeder_creates_three_zones_with_placeholder_limits(): void
+    public function test_seeder_creates_the_cikokol_warehouse_with_three_zones_and_products(): void
     {
         $this->seed(ZoneSeeder::class);
+        $this->seed(ZoneSeeder::class); // idempoten
 
-        $this->assertSame(3, Zone::count());
-        $sayur = Zone::where('device_id', 'gudang-zona-b')->firstOrFail();
-        $this->assertEquals(25, $sayur->temp_max);
-        $this->assertEquals(15, $sayur->temp_min);
-        $this->assertNull($sayur->device_token_hash);
+        $warehouse = Warehouse::where('name', 'Gudang Cikokol (Telur)')->sole();
+        $this->assertSame(['Zona FG', 'Zona Inbound', 'Zona Loading'], $warehouse->zones()->orderBy('name')->pluck('name')->all());
+        $fg = Zone::where('device_id', 'cikokol-fg')->firstOrFail();
+        $this->assertEquals(20, $fg->temp_max);
+        $this->assertEquals(10, $fg->temp_min);
+        $this->assertNull($fg->device_token_hash);
+        $this->assertSame(['Telur Ayam Grade A', 'Telur Ayam Grade B', 'Telur Bebek'], $fg->products->pluck('name')->all());
     }
 }

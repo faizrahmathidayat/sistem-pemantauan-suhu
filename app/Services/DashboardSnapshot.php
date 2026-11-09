@@ -27,7 +27,7 @@ final class DashboardSnapshot
     {
         $now = now();
 
-        $zones = Zone::with('latestLog')->orderBy('name')->get()
+        $zones = Zone::with(['latestLog', 'products'])->orderBy('name')->get()
             ->map(function (Zone $zone) use ($now): array {
                 $log = $zone->latestLog;
                 $status = $this->evaluator->forZone($zone, $now);
@@ -35,7 +35,8 @@ final class DashboardSnapshot
                 return [
                     'id' => $zone->id,
                     'name' => $zone->name,
-                    'product_type' => $zone->product_type->value,
+                    'warehouse_id' => $zone->warehouse_id,
+                    'products' => $zone->products->pluck('name')->all(),
                     'status' => $status->value,
                     'temperature' => $log?->temperature,
                     'humidity' => $log?->humidity,

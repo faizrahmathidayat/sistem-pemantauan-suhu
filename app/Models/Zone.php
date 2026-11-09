@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use App\Enums\ProductType;
 use Database\Factories\ZoneFactory;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 #[Hidden(['device_token_hash'])]
 class Zone extends Model
@@ -18,7 +19,7 @@ class Zone extends Model
 
     protected $fillable = [
         'name',
-        'product_type',
+        'warehouse_id',
         'device_id',
         'device_token_hash',
         'temp_min',
@@ -32,7 +33,6 @@ class Zone extends Model
     protected function casts(): array
     {
         return [
-            'product_type' => ProductType::class,
             'temp_min' => 'float',
             'temp_max' => 'float',
             'humidity_min' => 'float',
@@ -40,6 +40,33 @@ class Zone extends Model
             'warning_margin' => 'float',
             'humidity_warning_margin' => 'float',
         ];
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    /** Produk yang disimpan di zona ini (nama saja), urut sesuai input. */
+    public function products(): HasMany
+    {
+        return $this->hasMany(ZoneProduct::class)->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Ganti seluruh daftar produk; urutan mengikuti urutan $names.
+     *
+     * @param  list<string>  $names
+     */
+    public function syncProducts(array $names): void
+    {
+        DB::transaction(function () use ($names): void {
+            $this->products()->delete();
+            foreach (array_values($names) as $position => $name) {
+                $this->products()->create(['name' => $name, 'position' => $position]);
+            }
+        });
+        $this->unsetRelation('products');
     }
 
     public function logs(): HasMany

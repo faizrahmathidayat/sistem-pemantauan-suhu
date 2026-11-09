@@ -12,7 +12,9 @@ class ZoneStatusEvaluatorTest extends TestCase
 {
     private function zone(array $overrides = []): Zone
     {
+        // warehouse_id diisi agar factory tidak membuat gudang (tes unit ini tanpa database).
         return Zone::factory()->make(array_merge([
+            'warehouse_id' => 1,
             'temp_min' => 15, 'temp_max' => 25, 'warning_margin' => 2,
             'humidity_min' => 80, 'humidity_max' => 95, 'humidity_warning_margin' => 5,
         ], $overrides));

@@ -9,7 +9,10 @@
 
     <a href="{{ route('zones.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← Kembali</a>
     <h1 class="mt-1 text-lg font-semibold">Ubah batas {{ $zone->name }}</h1>
-    <p class="text-sm text-slate-500">{{ $zone->product_type->label() }} · perangkat <code>{{ $zone->device_id }}</code></p>
+    <p class="text-sm text-slate-500">{{ $zone->warehouse->name }} · perangkat <code>{{ $zone->device_id }}</code></p>
+    @if ($zone->products->isNotEmpty())
+        <p class="text-sm text-slate-500">Produk: {{ $zone->products->pluck('name')->implode(', ') }}</p>
+    @endif
 
     @if ($errors->any())
         <div role="alert" class="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">

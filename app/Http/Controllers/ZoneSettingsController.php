@@ -12,12 +12,12 @@ class ZoneSettingsController extends Controller
 {
     public function index(): View
     {
-        return view('zones.index', ['zones' => Zone::orderBy('name')->get()]);
+        return view('zones.index', ['zones' => Zone::with(['warehouse', 'products'])->orderBy('name')->get()]);
     }
 
     public function edit(Zone $zone): View
     {
-        return view('zones.edit', ['zone' => $zone]);
+        return view('zones.edit', ['zone' => $zone->load(['warehouse', 'products'])]);
     }
 
     public function update(UpdateZoneRequest $request, Zone $zone, AuditLogger $audit): RedirectResponse
