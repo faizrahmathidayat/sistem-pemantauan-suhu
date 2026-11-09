@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +32,27 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Bawaan Administrator: tes dan data contoh tidak terhalang izin kecuali diminta lain.
+            'role_id' => fn () => Role::administrator()->id,
         ];
+    }
+
+    public function withRole(Role $role): static
+    {
+        return $this->state(fn (array $attributes) => ['role_id' => $role->id]);
+    }
+
+    public function withoutRole(): static
+    {
+        return $this->state(fn (array $attributes) => ['role_id' => null]);
+    }
+
+    /** User dengan role baru yang hanya berisi izin yang diminta. */
+    public function withPermissions(Permission ...$permissions): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::factory()->withPermissions(...$permissions)->create()->id,
+        ]);
     }
 
     /**
