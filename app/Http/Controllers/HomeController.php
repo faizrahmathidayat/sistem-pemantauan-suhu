@@ -20,6 +20,7 @@ class HomeController extends Controller
         'notification.view' => 'notifications.index',
         'zone.view' => 'zones.index',
         'auditlog.view' => 'audit-logs.index',
+        'role.manage' => 'roles.index',
     ];
 
     public function __invoke(Request $request): RedirectResponse|View

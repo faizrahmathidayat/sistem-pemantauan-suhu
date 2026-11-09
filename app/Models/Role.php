@@ -56,6 +56,8 @@ class Role extends Model
             ->pluck('permission')
             ->map(fn (string $value) => Permission::tryFrom($value))
             ->filter()
+            // Urutan tetap sesuai daftar izin, bukan urutan penyimpanan.
+            ->sortBy(fn (Permission $p) => array_search($p, Permission::cases(), true))
             ->values()
             ->all();
     }

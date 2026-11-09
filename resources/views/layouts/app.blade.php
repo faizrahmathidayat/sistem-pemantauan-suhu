@@ -27,6 +27,9 @@
                 @can('auditlog.view')
                     <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
                 @endcan
+                @can('role.manage')
+                    <a href="{{ url('/roles') }}" class="hover:text-emerald-700">Role</a>
+                @endcan
                 @can('notification.view')
                     @php($unread = auth()->user()->unreadNotifications()->count())
                     <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">

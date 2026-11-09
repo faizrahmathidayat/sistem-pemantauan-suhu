@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Zone;
 use App\Services\AuditLogger;
@@ -176,5 +177,56 @@ class AuditLogTest extends TestCase
     public function test_navigation_links_to_the_log(): void
     {
         $this->actingAs(User::factory()->create())->get('/dashboard')->assertSee('/audit-logs', false);
+    }
+
+    public function test_role_events_are_recorded_with_permission_lists(): void
+    {
+        $actor = User::factory()->create(['name' => 'Budi Santoso']);
+
+        $this->actingAs($actor)->post('/roles', ['name' => 'Kepala Gudang', 'permissions' => ['zone.view', 'dashboard.view']]);
+        $created = AuditLog::sole();
+        $this->assertSame('role.created', $created->event);
+        $this->assertSame('Budi Santoso', $created->user_name);
+        $this->assertSame('Kepala Gudang', $created->subject_label);
+        $this->assertSame('Kepala Gudang', $created->diff['name']['to']);
+        $this->assertNull($created->diff['name']['from']);
+        $this->assertSame([], $created->diff['permissions']['from']);
+        $this->assertSame(['Melihat dashboard', 'Melihat batas zona'], $created->diff['permissions']['to']);
+
+        $role = Role::where('name', 'Kepala Gudang')->sole();
+
+        // Menyimpan tanpa perubahan tidak mencatat apa pun.
+        $this->actingAs($actor)->put("/roles/{$role->id}", ['name' => 'Kepala Gudang', 'permissions' => ['dashboard.view', 'zone.view']]);
+        $this->assertSame(1, AuditLog::count());
+
+        $this->actingAs($actor)->put("/roles/{$role->id}", ['name' => 'Kepala Gudang', 'permissions' => ['dashboard.view', 'zone.update']]);
+        $updated = AuditLog::where('event', 'role.updated')->sole();
+        $this->assertArrayNotHasKey('name', $updated->diff);
+        $this->assertSame(['Melihat dashboard', 'Melihat batas zona'], $updated->diff['permissions']['from']);
+        $this->assertSame(['Melihat dashboard', 'Mengubah batas zona'], $updated->diff['permissions']['to']);
+
+        $this->actingAs($actor)->delete("/roles/{$role->id}");
+        $deleted = AuditLog::where('event', 'role.deleted')->sole();
+        $this->assertSame('Kepala Gudang', $deleted->subject_label);
+        $this->assertSame('Kepala Gudang', $deleted->diff['name']['from']);
+    }
+
+    public function test_log_page_formats_string_and_list_values(): void
+    {
+        AuditLog::factory()->create([
+            'event' => 'role.updated', 'subject_type' => Role::class, 'subject_label' => 'Kepala Gudang',
+            'diff' => [
+                'name' => ['from' => null, 'to' => 'Nama Baru'],
+                'permissions' => ['from' => ['Melihat dashboard', 'Melihat batas zona'], 'to' => []],
+            ],
+        ]);
+
+        $this->actingAs(User::factory()->create())->get('/audit-logs')
+            ->assertOk()
+            ->assertSee('Mengubah role')
+            ->assertSee('Nama Baru')
+            ->assertSee('Melihat dashboard, Melihat batas zona')
+            ->assertSee('–')
+            ->assertDontSee('tidak diperiksa');
     }
 }

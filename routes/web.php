@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\IncidentAcknowledgeController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ZoneReadingsController;
 use App\Http\Controllers\ZoneSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
+
+    Route::resource('roles', RoleController::class)->except('show')->middleware('can:role.manage');
 
     Route::get('/zones', [ZoneSettingsController::class, 'index'])->middleware('can:zone.view')->name('zones.index');
     Route::middleware('can:zone.update')->group(function () {

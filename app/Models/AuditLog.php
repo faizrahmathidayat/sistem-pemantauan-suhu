@@ -20,7 +20,16 @@ class AuditLog extends Model
     /** Label kejadian; tambahkan entri di sini untuk jenis perubahan baru. */
     public const EVENTS = [
         'zone.limits_updated' => 'Mengubah batas zona',
+        'role.created' => 'Menambah role',
+        'role.updated' => 'Mengubah role',
+        'role.deleted' => 'Menghapus role',
+        'user.created' => 'Menambah user',
+        'user.updated' => 'Mengubah user',
+        'user.deleted' => 'Menghapus user',
     ];
+
+    /** Kolom yang bernilai null berarti "tidak diperiksa" (batas kelembapan boleh dikosongkan). */
+    private const NULL_MEANS_UNCHECKED = ['humidity_min', 'humidity_max'];
 
     /** Label dan satuan tiap kolom yang dicatat. */
     public const FIELDS = [
@@ -30,6 +39,11 @@ class AuditLog extends Model
         'humidity_max' => ['Kelembapan maksimum', '%'],
         'warning_margin' => ['Margin Waspada suhu', '°C'],
         'humidity_warning_margin' => ['Margin Waspada kelembapan', '%'],
+        'name' => ['Nama', ''],
+        'email' => ['Email', ''],
+        'role' => ['Role', ''],
+        'password' => ['Kata sandi', ''],
+        'permissions' => ['Izin', ''],
     ];
 
     protected $fillable = [
@@ -71,18 +85,26 @@ class AuditLog extends Model
             [$label, $unit] = self::FIELDS[$field] ?? [$field, ''];
             $lines[] = [
                 'label' => $label,
-                'from' => $this->formatValue($change['from'] ?? null, $unit),
-                'to' => $this->formatValue($change['to'] ?? null, $unit),
+                'from' => $this->formatValue($field, $change['from'] ?? null, $unit),
+                'to' => $this->formatValue($field, $change['to'] ?? null, $unit),
             ];
         }
 
         return $lines;
     }
 
-    private function formatValue(mixed $value, string $unit): string
+    private function formatValue(string $field, mixed $value, string $unit): string
     {
+        if (is_array($value)) {
+            return $value === [] ? '–' : implode(', ', array_map('strval', $value));
+        }
+
         if ($value === null) {
-            return 'tidak diperiksa';
+            return in_array($field, self::NULL_MEANS_UNCHECKED, true) ? 'tidak diperiksa' : '–';
+        }
+
+        if (! is_int($value) && ! is_float($value)) {
+            return (string) $value;
         }
 
         $number = rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');

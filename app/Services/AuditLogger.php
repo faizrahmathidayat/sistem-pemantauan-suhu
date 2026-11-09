@@ -15,15 +15,20 @@ class AuditLogger
 {
     /**
      * Simpan $model (yang sudah di-fill) dan catat selisih nilai lama dan barunya.
+     * Kolom di $ignore dan kolom tersembunyi model (mis. kata sandi) tidak ikut dicatat;
+     * $extra menambah entri yang dihitung pemanggil (mis. nama role, daftar izin).
      * Tidak ada catatan bila tidak ada nilai yang berubah.
+     *
+     * @param  array<string, array{from: mixed, to: mixed}>  $extra
+     * @param  list<string>  $ignore
      */
-    public function saveAndLog(Model $model, User $user, string $event, string $label): ?AuditLog
+    public function saveAndLog(Model $model, ?User $actor, string $event, string $label, array $extra = [], array $ignore = []): ?AuditLog
     {
-        return DB::transaction(function () use ($model, $user, $event, $label): ?AuditLog {
-            $changes = $this->changesOf($model);
+        return DB::transaction(function () use ($model, $actor, $event, $label, $extra, $ignore): ?AuditLog {
+            $changes = $this->changesOf($model, array_merge($ignore, $model->getHidden())) + $extra;
             $model->save();
 
-            return $changes === [] ? null : $this->record($user, $event, $model, $label, $changes);
+            return $changes === [] ? null : $this->record($actor, $event, $model, $label, $changes);
         });
     }
 
@@ -44,12 +49,16 @@ class AuditLogger
     }
 
     /**
+     * @param  list<string>  $ignore
      * @return array<string, array{from: mixed, to: mixed}>
      */
-    private function changesOf(Model $model): array
+    private function changesOf(Model $model, array $ignore): array
     {
         $changes = [];
         foreach (array_keys($model->getDirty()) as $field) {
+            if (in_array($field, $ignore, true)) {
+                continue;
+            }
             $changes[$field] = ['from' => $model->getOriginal($field), 'to' => $model->getAttribute($field)];
         }
 
