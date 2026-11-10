@@ -14,7 +14,7 @@ Zona berstatus Bahaya sudah diurutkan paling atas oleh server (`DashboardSnapsho
 
 ## Pendekatan
 
-Meniru pola TailAdmin dengan Tailwind 4 yang sudah ada (pilihan Anda), dengan palet warnanya sebagai token di `resources/css/app.css` (`@theme`): `brand` biru (utama), `gray`, `success` hijau, `warning` kuning, `error` merah. Warna utama bisa diganti dengan mengubah token, tanpa menyentuh Blade.
+Meniru pola TailAdmin dengan Tailwind 4 yang sudah ada (pilihan Anda), dengan palet warnanya sebagai token di `resources/css/app.css` (`@theme`): `brand` hijau tua `#0a1f12` (utama), `gray`, `success` hijau, `warning` kuning, `error` merah. Warna utama bisa diganti dengan mengubah token, tanpa menyentuh Blade.
 
 **Dependensi baru:** hanya `alpinejs` (versi dipasang persis) untuk buka-tutup sidebar di HP dan menu dropdown. Chart.js tetap per halaman seperti sekarang.
 
@@ -50,7 +50,7 @@ Lebar tombol: penuh di HP untuk aksi utama (Simpan, Tandai Telah Ditangani, Tera
 
 ## Keputusan saya (mohon diperiksa)
 
-1. Warna utama **biru TailAdmin**, bukan hijau seperti sekarang; status tetap hijau/kuning/merah. Mudah diganti lewat token.
+1. Warna utama **`#0a1f12`** (hijau tua, permintaan Anda setelah rancangan disetujui) menggantikan biru TailAdmin; skala tint turunannya saya tentukan (lihat rencana) dan status tetap hijau/kuning/merah. Mudah diganti lewat token.
 2. Ikon SVG sederhana buatan sendiri (bukan paket ikon), supaya tidak menambah dependensi.
 3. Tanpa mode gelap dan tanpa pencarian di header (tidak diminta, dan dua-duanya menggandakan pekerjaan di setiap halaman).
 4. Hasilnya meniru tampilan TailAdmin, tidak identik piksel per piksel karena berkas template tidak diunduh.

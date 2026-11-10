@@ -8,55 +8,20 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-800 antialiased">
-    @yield('banner')
+<body class="min-h-screen bg-gray-50 text-gray-800 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+    @include('layouts.partials.sidebar')
 
-    <header class="border-b border-slate-200 bg-white print:hidden">
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
-            <a href="{{ url('/dashboard') }}" class="font-semibold">🥬 {{ config('app.name') }}</a>
-            <nav class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                @can('dashboard.view')
-                    <a href="{{ url('/dashboard') }}" class="hover:text-emerald-700">Dashboard</a>
-                @endcan
-                @can('incident.view')
-                    <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
-                @endcan
-                @can('report.view')
-                    <a href="{{ url('/reports') }}" class="hover:text-emerald-700">Laporan</a>
-                @endcan
-                @can('zone.view')
-                    <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
-                @endcan
-                @can('auditlog.view')
-                    <a href="{{ url('/audit-logs') }}" class="hover:text-emerald-700">Log Perubahan</a>
-                @endcan
-                @can('warehouse.manage')
-                    <a href="{{ url('/warehouses') }}" class="hover:text-emerald-700">Gudang</a>
-                @endcan
-                @can('user.manage')
-                    <a href="{{ url('/users') }}" class="hover:text-emerald-700">User</a>
-                @endcan
-                @can('role.manage')
-                    <a href="{{ url('/roles') }}" class="hover:text-emerald-700">Role</a>
-                @endcan
-                @can('notification.view')
-                    @php($unread = auth()->user()->unreadNotifications()->count())
-                    <a href="{{ url('/notifications') }}" class="relative px-1 text-lg" aria-label="Notifikasi" title="Notifikasi">
-                        🔔<span data-unread-badge @if ($unread === 0) hidden @endif
-                              class="absolute -right-2 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold leading-4 text-white">{{ $unread }}</span>
-                    </a>
-                @endcan
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="text-slate-500 hover:text-slate-800">Keluar</button>
-                </form>
-            </nav>
+    <div class="flex min-h-screen min-w-0 flex-col lg:pl-72 print:pl-0">
+        {{-- Header dan banner kritis menempel bersama di atas layar --}}
+        <div class="sticky top-0 z-30 print:hidden">
+            @include('layouts.partials.header')
+            @yield('banner')
         </div>
-    </header>
 
-    <main class="mx-auto max-w-6xl px-4 py-4">
-        @yield('content')
-    </main>
+        <main class="mx-auto w-full max-w-screen-2xl min-w-0 flex-1 p-4 md:p-6 print:max-w-none print:p-0">
+            @yield('content')
+        </main>
+    </div>
 
     @stack('scripts')
 </body>

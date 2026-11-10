@@ -5,18 +5,107 @@
 
 @theme {
     --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Warna utama #0a1f12 (brand-500). Untuk mengganti tema cukup ubah skala ini. */
+    --color-brand-25: #f6faf7;
+    --color-brand-50: #eef5f0;
+    --color-brand-100: #dbe9df;
+    --color-brand-200: #bcd3c3;
+    --color-brand-300: #8fb09a;
+    --color-brand-400: #4f7a5d;
+    --color-brand-500: #0a1f12;
+    --color-brand-600: #07160d;
+    --color-brand-700: #050f09;
+
+    --color-gray-25: #fcfcfd;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f2f4f7;
+    --color-gray-200: #e4e7ec;
+    --color-gray-300: #d0d5dd;
+    --color-gray-400: #98a2b3;
+    --color-gray-500: #667085;
+    --color-gray-600: #475467;
+    --color-gray-700: #344054;
+    --color-gray-800: #1d2939;
+    --color-gray-900: #101828;
+
+    --color-success-50: #ecfdf3;
+    --color-success-100: #d1fadf;
+    --color-success-500: #12b76a;
+    --color-success-600: #039855;
+    --color-success-700: #027a48;
+
+    --color-warning-50: #fffaeb;
+    --color-warning-100: #fef0c7;
+    --color-warning-500: #f79009;
+    --color-warning-600: #dc6803;
+    --color-warning-700: #b54708;
+
+    --color-error-50: #fef3f2;
+    --color-error-100: #fee4e2;
+    --color-error-500: #f04438;
+    --color-error-600: #d92d20;
+    --color-error-700: #b42318;
 }
 
-.chip {
-    flex: none;
-    min-height: 2.25rem;
-    border-radius: 9999px;
-    background: #e2e8f0;
-    padding: 0.25rem 0.9rem;
-    font-size: 0.875rem;
-}
+@layer components {
+    [x-cloak] {
+        display: none !important;
+    }
 
-.chip-active {
-    background: #059669;
-    color: #fff;
+    .form-label {
+        @apply mb-1.5 block text-sm font-medium text-gray-700;
+    }
+
+    .form-input {
+        @apply h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10;
+    }
+
+    textarea.form-input {
+        @apply h-auto py-2.5;
+    }
+
+    .form-hint {
+        @apply mt-1.5 text-xs text-gray-500;
+    }
+
+    .form-error {
+        @apply mt-1.5 text-sm text-error-600;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .btn-sm {
+        @apply px-3 py-2 text-xs;
+    }
+
+    .btn-primary {
+        @apply bg-brand-500 text-white hover:bg-brand-600;
+    }
+
+    .btn-secondary {
+        @apply bg-white text-gray-700 ring-1 ring-gray-300 ring-inset hover:bg-gray-50;
+    }
+
+    .btn-danger {
+        @apply bg-error-600 text-white hover:bg-error-700;
+    }
+
+    .chip {
+        @apply inline-flex min-h-9 flex-none items-center gap-1 rounded-full bg-gray-100 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-200;
+    }
+
+    .chip-active {
+        @apply bg-brand-500 text-white hover:bg-brand-500;
+    }
+
+    .table-th {
+        @apply px-5 py-3 text-start text-xs font-medium whitespace-nowrap text-gray-500;
+    }
+
+    .table-td {
+        @apply px-5 py-4 text-sm text-gray-500;
+    }
 }
