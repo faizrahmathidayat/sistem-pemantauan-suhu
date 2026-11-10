@@ -7,62 +7,69 @@
         $n = fn ($v) => rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
     @endphp
 
-    <h1 class="text-lg font-semibold">Batas Suhu &amp; Kelembapan</h1>
-    <p class="text-sm text-slate-500">Di luar batas = status Bahaya. Dekat batas (dalam margin) = status Waspada. Perubahan langsung dipakai pada pembacaan sensor berikutnya.</p>
+    <x-page-header title="Batas Suhu & Kelembapan" description="Di luar batas = status Bahaya. Dekat batas (dalam margin) = status Waspada. Perubahan langsung dipakai pada pembacaan sensor berikutnya." />
 
     @if (session('status'))
-        <p role="status" class="mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✅ {{ session('status') }}</p>
+        <x-alert variant="success" role="status" class="mb-4">{{ session('status') }}</x-alert>
     @endif
 
     @forelse ($warehouses as $warehouse)
-        <div class="mt-5 flex items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">{{ $warehouse->name }}</h2>
+        <div class="mt-6 mb-3 flex items-center justify-between gap-3 first:mt-0">
+            <h2 class="text-sm font-semibold tracking-wide text-gray-500 uppercase">{{ $warehouse->name }}</h2>
             @can('zone.manage')
-                <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="rounded-lg bg-white px-3 py-1.5 text-xs font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">+ Zona</a>
+                <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="btn btn-secondary btn-sm">+ Zona</a>
             @endcan
         </div>
-        <ul class="mt-2 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <ul class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @forelse ($warehouse->zones as $zone)
-                <li class="rounded-xl bg-white p-4 shadow-sm">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <h3 class="font-semibold">{{ $zone->name }}</h3>
-                            <p class="text-xs text-slate-500">{{ $zone->device_id }}</p>
-                            @if ($zone->products->isNotEmpty())
-                                <p class="text-xs text-slate-500">{{ $zone->products->pluck('name')->implode(', ') }}</p>
-                            @endif
+                <li>
+                    <x-card class="h-full">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="truncate text-base font-semibold text-gray-800">{{ $zone->name }}</h3>
+                                <p class="truncate text-xs text-gray-500">{{ $zone->device_id }}</p>
+                            </div>
                         </div>
-                        <div class="flex shrink-0 flex-col items-end gap-1">
+                        @if ($zone->products->isNotEmpty())
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                @foreach ($zone->products as $product)
+                                    <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ $product->name }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+                        <dl class="mt-4 space-y-2 rounded-xl bg-gray-50 p-3 text-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <dt class="flex items-center gap-2 text-gray-500"><x-icon name="thermometer" class="size-4" /> Suhu</dt>
+                                <dd class="text-right font-medium text-gray-800">{{ $n($zone->temp_min) }}–{{ $n($zone->temp_max) }} °C <span class="block text-xs font-normal text-gray-500 sm:inline">(Waspada ±{{ $n($zone->warning_margin) }})</span></dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <dt class="flex items-center gap-2 text-gray-500"><x-icon name="droplet" class="size-4" /> Kelembapan</dt>
+                                <dd class="text-right font-medium text-gray-800">
+                                    @if ($zone->humidity_min !== null && $zone->humidity_max !== null)
+                                        {{ $n($zone->humidity_min) }}–{{ $n($zone->humidity_max) }} % <span class="block text-xs font-normal text-gray-500 sm:inline">(Waspada ±{{ $n($zone->humidity_warning_margin) }})</span>
+                                    @else
+                                        <span class="font-normal text-gray-500">Tidak diperiksa</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                             @can('zone.update')
-                                <a href="{{ route('zones.edit', $zone) }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Ubah batas</a>
+                                <a href="{{ route('zones.edit', $zone) }}" class="btn btn-primary w-full sm:flex-1">Ubah batas</a>
                             @endcan
                             @can('zone.manage')
-                                <a href="{{ route('zones.manage', $zone) }}" class="text-xs text-slate-600 underline">Kelola zona</a>
+                                <a href="{{ route('zones.manage', $zone) }}" class="btn btn-secondary w-full sm:flex-1">Kelola zona</a>
                             @endcan
                         </div>
-                    </div>
-                    <dl class="mt-3 space-y-1 text-sm">
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-slate-500">🌡️ Suhu</dt>
-                            <dd class="font-medium">{{ $n($zone->temp_min) }}–{{ $n($zone->temp_max) }} °C <span class="text-xs font-normal text-slate-500">(Waspada ±{{ $n($zone->warning_margin) }})</span></dd>
-                        </div>
-                        <div class="flex justify-between gap-2">
-                            <dt class="text-slate-500">💧 Kelembapan</dt>
-                            <dd class="font-medium">
-                                @if ($zone->humidity_min !== null && $zone->humidity_max !== null)
-                                    {{ $n($zone->humidity_min) }}–{{ $n($zone->humidity_max) }} % <span class="text-xs font-normal text-slate-500">(Waspada ±{{ $n($zone->humidity_warning_margin) }})</span>
-                                @else
-                                    <span class="text-slate-500">Tidak diperiksa</span>
-                                @endif
-                            </dd>
-                        </div>
-                    </dl>
+                    </x-card>
                 </li>
             @empty
-                <li class="rounded-xl bg-white p-4 text-sm text-slate-500 shadow-sm">Belum ada zona di gudang ini.</li>
+                <li class="md:col-span-2 xl:col-span-3">
+                    <x-card><x-empty title="Belum ada zona di gudang ini." icon="zone" /></x-card>
+                </li>
             @endforelse
         </ul>
     @empty
-        <p class="mt-3 rounded-xl bg-white p-4 text-slate-500 shadow-sm">Belum ada gudang yang bisa Anda lihat.</p>
+        <x-card><x-empty title="Belum ada gudang yang bisa Anda lihat." icon="building" /></x-card>
     @endforelse
 @endsection

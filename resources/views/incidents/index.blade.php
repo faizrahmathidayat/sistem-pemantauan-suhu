@@ -3,63 +3,84 @@
 @section('title', 'Riwayat Insiden')
 
 @section('content')
-    <h1 class="text-lg font-semibold">Riwayat Insiden</h1>
-    <p class="text-sm text-slate-500">Kapan suhu atau kelembapan keluar batas, berapa lama, dan siapa yang menanganinya.</p>
+    <x-page-header title="Riwayat Insiden" description="Kapan suhu atau kelembapan keluar batas, berapa lama, dan siapa yang menanganinya." />
 
     @php
         $peak = fn ($i) => $i->peak_value === null ? '–' : number_format($i->peak_value, 1, ',', '.').$i->reason->unit();
     @endphp
 
     @if ($incidents->isEmpty())
-        <p class="mt-4 rounded-xl bg-white p-4 text-slate-500 shadow-sm">Belum ada insiden.</p>
+        <x-card>
+            <x-empty title="Belum ada insiden." icon="check">Semua zona berjalan dalam batas.</x-empty>
+        </x-card>
     @else
-        {{-- Desktop: tabel --}}
-        <div class="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-sm md:block">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+        {{-- Layar lebar (≥ xl, setelah sidebar): tabel 7 kolom --}}
+        <x-card flush class="hidden xl:block">
+            <x-table>
+                <thead class="border-b border-gray-100">
                     <tr>
-                        <th class="px-4 py-2">Zona</th><th class="px-4 py-2">Jenis</th><th class="px-4 py-2">Mulai</th>
-                        <th class="px-4 py-2">Selesai</th><th class="px-4 py-2">Durasi</th><th class="px-4 py-2">Puncak</th>
-                        <th class="px-4 py-2">Penanganan</th>
+                        <th class="table-th">Zona</th>
+                        <th class="table-th">Jenis</th>
+                        <th class="table-th">Mulai</th>
+                        <th class="table-th">Selesai</th>
+                        <th class="table-th">Durasi</th>
+                        <th class="table-th">Puncak</th>
+                        <th class="table-th">Penanganan</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-gray-100">
                     @foreach ($incidents as $incident)
                         <tr>
-                            <td class="px-4 py-2 font-medium">{{ $incident->zone->name }}<span class="block text-xs font-normal text-slate-500">{{ $incident->zone->warehouse->name }}</span></td>
-                            <td class="px-4 py-2">{{ $incident->reason->label() }}</td>
-                            <td class="px-4 py-2">{{ $incident->started_at->format('d M Y H:i') }}</td>
-                            <td class="px-4 py-2">{{ $incident->ended_at?->format('d M Y H:i') ?? 'berlangsung' }}</td>
-                            <td class="px-4 py-2">{{ $incident->durationLabel() }}</td>
-                            <td class="px-4 py-2">{{ $peak($incident) }}</td>
-                            <td class="px-4 py-2">
-                                @if ($incident->acknowledger) ✅ Ditangani oleh {{ $incident->acknowledger->name }} @else 🔴 Belum ditangani @endif
+                            <td class="table-td">
+                                <span class="block font-medium text-gray-800">{{ $incident->zone->name }}</span>
+                                <span class="block text-xs">{{ $incident->zone->warehouse->name }}</span>
+                            </td>
+                            <td class="table-td">{{ $incident->reason->label() }}</td>
+                            <td class="table-td whitespace-nowrap">{{ $incident->started_at->format('d M Y H:i') }}</td>
+                            <td class="table-td whitespace-nowrap">
+                                @if ($incident->isOpen()) <x-badge variant="warning">Berlangsung</x-badge> @else {{ $incident->ended_at->format('d M Y H:i') }} @endif
+                            </td>
+                            <td class="table-td whitespace-nowrap">{{ $incident->durationLabel() }}</td>
+                            <td class="table-td whitespace-nowrap">{{ $peak($incident) }}</td>
+                            <td class="table-td">
+                                @if ($incident->acknowledger)
+                                    <x-badge variant="success">Ditangani oleh {{ $incident->acknowledger->name }}</x-badge>
+                                @else
+                                    <x-badge variant="error">Belum ditangani</x-badge>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
-        </div>
+            </x-table>
+        </x-card>
 
-        {{-- Mobile: daftar kartu (zona + durasi di atas, status penanganan di bawah) --}}
-        <ul class="mt-3 space-y-2 md:hidden">
+        {{-- HP dan layar sedang: daftar kartu (zona dan durasi di atas, status penanganan di bawah) --}}
+        <ul data-mobile-list class="grid gap-3 md:grid-cols-2 xl:hidden">
             @foreach ($incidents as $incident)
-                <li class="rounded-xl bg-white p-3 shadow-sm">
-                    <div class="flex items-start justify-between gap-2">
-                        <span class="font-semibold">{{ $incident->zone->name }}<span class="block text-xs font-normal text-slate-500">{{ $incident->zone->warehouse->name }}</span></span>
-                        <span class="text-sm font-medium text-slate-600">{{ $incident->durationLabel() }}</span>
+                <li class="rounded-2xl border border-gray-200 bg-white p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-base font-semibold text-gray-800">{{ $incident->zone->name }}</p>
+                            <p class="truncate text-xs text-gray-500">{{ $incident->zone->warehouse->name }}</p>
+                        </div>
+                        <span class="shrink-0 text-sm font-medium text-gray-600">{{ $incident->durationLabel() }}</span>
                     </div>
-                    <p class="text-sm text-slate-600">{{ $incident->reason->label() }} · puncak {{ $peak($incident) }}</p>
-                    <p class="text-xs text-slate-500">
+                    <p class="mt-2 text-sm text-gray-700">{{ $incident->reason->label() }} · puncak {{ $peak($incident) }}</p>
+                    <p class="text-xs text-gray-500">
                         {{ $incident->started_at->format('d M H:i') }} → {{ $incident->ended_at?->format('d M H:i') ?? 'berlangsung' }}
                     </p>
-                    <p class="mt-1 text-sm">
-                        @if ($incident->acknowledger) ✅ Ditangani oleh {{ $incident->acknowledger->name }} @else 🔴 Belum ditangani @endif
-                    </p>
+                    <div class="mt-3">
+                        @if ($incident->acknowledger)
+                            <x-badge variant="success">Ditangani oleh {{ $incident->acknowledger->name }}</x-badge>
+                        @else
+                            <x-badge variant="error">Belum ditangani</x-badge>
+                        @endif
+                    </div>
                 </li>
             @endforeach
         </ul>
 
-        <div class="mt-4">{{ $incidents->links() }}</div>
+        <div class="mt-6">{{ $incidents->links() }}</div>
     @endif
 @endsection
