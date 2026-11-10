@@ -34,15 +34,15 @@ if (dataElement && canvas) {
         const min = isTemp ? data.temp_min : data.humidity_min;
         const max = isTemp ? data.temp_max : data.humidity_max;
         const unit = isTemp ? '°C' : '%';
-        const line = isTemp ? '#2563eb' : '#0ea5e9';
-        const faint = isTemp ? '#93c5fd' : '#7dd3fc';
+        const line = isTemp ? '#4f7a5d' : '#0ea5e9';
+        const faint = isTemp ? '#bcd3c3' : '#7dd3fc';
 
         const datasets = [
             { label: `Rata-rata (${unit})`, data: series.avg, borderColor: line, borderWidth: 2, pointRadius: 0, tension: 0.2 },
             { label: `Terendah (${unit})`, data: series.min, borderColor: faint, borderWidth: 1, pointRadius: 0, tension: 0.2 },
             { label: `Tertinggi (${unit})`, data: series.max, borderColor: faint, borderWidth: 1, pointRadius: 0, tension: 0.2 },
-            { label: `Batas maks (${unit})`, data: flat(max), borderColor: '#dc2626', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
-            { label: `Batas min (${unit})`, data: flat(min), borderColor: '#f59e0b', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
+            { label: `Batas maks (${unit})`, data: flat(max), borderColor: '#d92d20', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
+            { label: `Batas min (${unit})`, data: flat(min), borderColor: '#dc6803', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
         ].filter((dataset) => dataset.data !== null);
 
         chart?.destroy();
@@ -54,8 +54,11 @@ if (dataElement && canvas) {
                 maintainAspectRatio: false,
                 animation: false, // agar hasil cetak tidak setengah tergambar
                 interaction: { mode: 'index', intersect: false },
-                scales: { x: { ticks: { maxTicksLimit: 10 } } },
-                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 10, color: '#667085' }, grid: { display: false }, border: { color: '#e4e7ec' } },
+                    y: { ticks: { color: '#667085' }, grid: { color: '#f2f4f7' }, border: { display: false } },
+                },
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: '#475467' } } },
             },
         });
     }
