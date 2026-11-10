@@ -125,6 +125,16 @@ Antarmuka memakai pola **TailAdmin** (sidebar kiri, header yang menempel, kartu,
 - Tabel di layar lebar dan daftar kartu di HP/tablet (`data-mobile-list`); tombol aksi utama selebar layar di HP; zona berstatus Bahaya diurutkan paling atas oleh server.
 - Setelah mengubah kelas atau JS: `npm run build`. Tidak ada mode gelap.
 
+## Monitor publik (layar TV gudang)
+
+Halaman layar penuh tanpa login supaya semua karyawan bisa melihat kondisi gudang dari TV di dinding. Isinya satu pita status besar ("SEMUA ZONA AMAN" / "PERHATIAN: n ZONA DI LUAR BATAS" / "SENSOR OFFLINE" / "WASPADA") dan satu kartu gelap per zona dengan suhu dan kelembapan besar. Memperbarui diri tiap 10 detik; tidak ada tombol, menu, nama pengguna, atau nama produk.
+
+- **Membuat alamat:** menu **Gudang** → ubah gudang → kartu **Layar monitor** → **Buat alamat monitor** (izin `warehouse.manage`). Alamatnya berbentuk `/monitor/<40 karakter acak>`; hanya yang memegang alamat lengkap itu yang bisa membukanya. Alamat **hanya tampil sekali**: salin lalu buka di browser TV dan jadikan layar penuh (F11). Satu gudang satu alamat; beberapa TV boleh memakai alamat yang sama.
+- **Mengganti atau mematikan:** **Buat ulang alamat** mematikan alamat lama seketika (TV harus diisi alamat baru); **Matikan alamat** menghentikan monitor gudang itu. TV yang alamatnya sudah mati menampilkan "Alamat monitor ini tidak berlaku lagi". Semua aksi tercatat di Log Perubahan.
+- **Layar tidak boleh menipu:** zona yang berhenti mengirim data tampil OFFLINE dan ikut menaikkan pita; bila TV gagal menghubungi server lebih dari 45 detik, muncul pita merah "TIDAK TERHUBUNG KE SERVER · data terakhir pukul ..." dan kartu diredupkan. Jam diambil dari waktu server. Halaman memuat ulang dirinya tiap 6 jam agar ikut versi aplikasi terbaru.
+- **Keamanan:** kode disimpan hanya sebagai hash; respons `no-store`, `noindex`, dan `no-referrer`; dibatasi 60 (halaman) dan 300 (data) permintaan per menit per IP; berjalan tanpa sesi dan cookie sehingga tidak menulis ke tabel sesi. Alamat yang bocor cukup diganti. Isinya hanya suhu, kelembapan, batas, dan status.
+- Kode: `routes/monitor.php`, `MonitorController`, `MonitorDataController`, `App\Services\MonitorSnapshot`, `resources/views/monitor/show.blade.php`, `resources/js/monitor.js`.
+
 ## Menjalankan
 
 Dua proses harus hidup bersamaan:

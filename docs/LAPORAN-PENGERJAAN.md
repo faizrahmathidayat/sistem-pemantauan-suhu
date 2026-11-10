@@ -340,3 +340,20 @@ Verifikasi: 375 tes dan seluruhnya lulus kecuali 1 yang sengaja dilewati di SQLi
 Keputusan: tabel baru tampil mulai lebar `lg` (4-5 kolom) atau `xl` (Riwayat Insiden dan ringkasan Laporan, 7-8 kolom) karena sidebar menyempitkan isi; di bawahnya daftar kartu. Seri grafik suhu memakai hijau `#4f7a5d` karena warna utama hampir hitam. Tidak ada mode gelap dan kolom pencarian.
 
 Setelah review akhir: tautan kembali di HP untuk sub-halaman, tautan induk di halaman Tambah Zona mengikuti izin, ukuran ikon yang tertimpa, warna latar notifikasi belum dibaca, sidebar HP tidak bisa difokus saat tertutup, ring fokus input yang lebih jelas, kontras label, tabel cetak, dan penjagaan header untuk tamu diperbaiki dengan tes (387 tes, 386 lulus). Tercatat belum dikerjakan: banner kritis yang banyak menutup layar HP bila ada beberapa insiden sekaligus, dan peringatan akses di dashboard yang dibuat JavaScript masih berbeda tampilannya dari versi server.
+
+## 16. Monitor publik untuk TV gudang (10 Nov 2026)
+
+Halaman layar penuh tanpa login (`/monitor/{kode-rahasia}`) untuk TV di dinding gudang, dengan tampilan pilihan Anda (opsi C: pita status keseluruhan di atas dan kartu zona gelap dengan angka besar).
+
+| Bagian | Hasil |
+|---|---|
+| Alamat rahasia | Kolom `warehouses.monitor_token_hash` (hash sha256, 40 karakter acak, hanya tampil sekali). Admin membuat, membuat ulang, atau mematikan alamat di halaman ubah gudang; tiap aksi masuk Log Perubahan |
+| Data | `MonitorSnapshot`: status keseluruhan (Bahaya > Offline > Waspada > Aman), rincian zona bermasalah, kartu terurut menurut keparahan; tanpa produk, id, atau pengguna |
+| Halaman | `resources/views/monitor/show.blade.php` + `resources/js/monitor.js`: polling 10 detik, jam dari waktu server, pita merah "TIDAK TERHUBUNG KE SERVER" bila 45 detik tanpa respons, layar "alamat tidak berlaku lagi" bila alamat dicabut, muat ulang tiap 6 jam |
+| Keamanan | Header `no-store`/`noindex`/`no-referrer`, throttle 60 dan 300 per menit, tanpa sesi dan cookie |
+
+Verifikasi: 440 tes (439 lulus, 1 sengaja dilewati di SQLite; 53 tes baru). Di browser pada 1920×1080 dengan data demo: keadaan aman, bahaya (batas zona diturunkan sementara lalu dikembalikan), koneksi putus, dan alamat dicabut. Belum diuji di TV atau browser TV sungguhan.
+
+Keputusan yang saya ambil sendiri: rute monitor ada di luar grup `web` (tanpa sesi; di produksi `SESSION_DRIVER=database` akan menulis satu baris sesi per polling per TV); kartu menampilkan "Suhu min–maks" (bukan hanya batas atas) karena terlalu dingin juga pelanggaran; kode hanya tampil sekali seperti token sensor.
+
+Belum dikerjakan: lebih dari 6 zona memakai kartu lebih kecil tetapi tetap bisa tergulir (TV tidak bisa menggulir), tidak ada pengaturan susunan atau gudang ganda dalam satu layar, dan Pusher/WebSocket ditunda.
