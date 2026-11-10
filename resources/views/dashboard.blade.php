@@ -3,8 +3,8 @@
 @section('title', 'Dashboard')
 
 @section('banner')
-    {{-- Banner kritis: menempel di atas layar selama ada insiden terbuka. Diisi dashboard.js --}}
-    <div id="banners" class="sticky top-0 z-40"></div>
+    {{-- Banner kritis: menempel di bawah header selama ada insiden terbuka. Diisi dashboard.js --}}
+    <div id="banners"></div>
 @endsection
 
 @section('content')
@@ -13,63 +13,76 @@
          data-readings-url="{{ url('/zones/__ID__/readings') }}"
          data-ack-url="{{ url('/incidents/__ID__/acknowledge') }}">
 
-        <p id="scheduler-warning" hidden class="mb-3 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-900">
-            ⚠️ Pemeriksaan sensor offline tidak berjalan. Jalankan <code>php artisan schedule:work</code>.
-        </p>
-        <p id="connection-warning" hidden class="mb-3 rounded-lg bg-slate-200 px-3 py-2 text-sm text-slate-700">
+        <x-page-header title="Dashboard" description="Pantau suhu dan kelembapan semua zona gudang secara langsung." />
+
+        <x-alert variant="warning" id="scheduler-warning" hidden class="mb-4">
+            Pemeriksaan sensor offline tidak berjalan. Jalankan <code class="rounded bg-warning-100 px-1">php artisan schedule:work</code>.
+        </x-alert>
+        <x-alert variant="info" id="connection-warning" hidden class="mb-4">
             Koneksi ke server terputus, mencoba lagi…
-        </p>
+        </x-alert>
 
         @unless ($snapshot['has_access'])
-            <p id="no-access-notice" class="mb-3 rounded-lg bg-slate-200 px-3 py-2 text-sm text-slate-700">
+            <x-alert variant="info" id="no-access-notice" class="mb-4">
                 Anda belum ditugaskan ke gudang mana pun. Hubungi administrator.
-            </p>
+            </x-alert>
         @endunless
 
         {{-- Chip gudang (status terburuk + jumlah insiden terbuka); diisi dashboard.js --}}
-        <div id="warehouse-chips" class="mb-3 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" aria-label="Pilih gudang"></div>
+        <div id="warehouse-chips" class="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 whitespace-nowrap md:mx-0 md:px-0" aria-label="Pilih gudang"></div>
 
-        {{-- Kartu zona: satu kolom di HP (zona bahaya paling atas), tiga kolom di desktop --}}
-        <section id="zones" class="grid gap-3 md:grid-cols-3"></section>
+        {{-- Kartu zona: satu kolom di HP (zona bahaya paling atas, diurutkan server), tiga kolom di desktop --}}
+        <section id="zones" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></section>
 
-        <section class="mt-4 rounded-xl bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between gap-3">
-                <h2 class="font-semibold">Tren 24 jam terakhir</h2>
+        <x-card title="Tren 24 jam terakhir" class="mt-6">
+            <x-slot:actions>
                 @can('report.view')
-                    <a href="{{ route('reports.index') }}" class="text-sm text-emerald-700">Riwayat lengkap</a>
+                    <a href="{{ route('reports.index') }}" class="text-sm font-medium text-brand-500 hover:underline">Riwayat lengkap</a>
                 @endcan
-            </div>
-            <div class="mt-2 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" id="chart-zone-chips" aria-label="Pilih zona"></div>
-            <div class="mt-2 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" id="chart-metric-chips" aria-label="Pilih metrik">
-                <button type="button" data-metric="temperature" class="chip chip-active">Suhu</button>
-                <button type="button" data-metric="humidity" class="chip">Kelembapan</button>
-            </div>
-            <div class="relative mt-3 h-56 sm:h-72"><canvas id="trend-chart"></canvas></div>
-            <p id="chart-empty" hidden class="mt-2 text-sm text-slate-500">Belum ada data pada rentang ini.</p>
-        </section>
+            </x-slot:actions>
 
-        <section class="mt-4 rounded-xl bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Insiden terbaru</h2>
-                <a href="{{ url('/incidents') }}" class="text-sm text-emerald-700">Lihat semua</a>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex max-w-full gap-2 overflow-x-auto pb-1 whitespace-nowrap" id="chart-zone-chips" aria-label="Pilih zona"></div>
+                <div class="flex gap-2" id="chart-metric-chips" aria-label="Pilih metrik">
+                    <button type="button" data-metric="temperature" class="chip chip-active">Suhu</button>
+                    <button type="button" data-metric="humidity" class="chip">Kelembapan</button>
+                </div>
             </div>
-            <ul class="mt-2 divide-y divide-slate-100 text-sm">
+            <div class="relative mt-4 h-64 sm:h-80"><canvas id="trend-chart"></canvas></div>
+            <p id="chart-empty" hidden class="mt-2 text-sm text-gray-500">Belum ada data pada rentang ini.</p>
+        </x-card>
+
+        <x-card title="Insiden terbaru" class="mt-6" flush>
+            <x-slot:actions>
+                <a href="{{ url('/incidents') }}" class="text-sm font-medium text-brand-500 hover:underline">Lihat semua</a>
+            </x-slot:actions>
+
+            <ul class="divide-y divide-gray-100">
                 @forelse ($recentIncidents as $incident)
-                    <li class="flex flex-wrap items-center justify-between gap-x-3 py-2">
-                        <span class="font-medium">{{ $incident->zone->warehouse->name }} › {{ $incident->zone->name }} · {{ $incident->reason->label() }}</span>
-                        <span class="text-slate-500">
-                            {{ $incident->started_at->format('d M H:i') }}
-                            @if ($incident->isOpen()) · berlangsung @else · selesai {{ $incident->ended_at->format('H:i') }} @endif
-                        </span>
-                        <span class="w-full text-slate-500">
-                            @if ($incident->acknowledger) ✅ Ditangani oleh {{ $incident->acknowledger->name }} @else 🔴 Belum ditangani @endif
-                        </span>
+                    <li class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-gray-800">{{ $incident->zone->warehouse->name }} › {{ $incident->zone->name }}</p>
+                            <p class="text-sm text-gray-500">
+                                {{ $incident->reason->label() }} · {{ $incident->started_at->format('d M H:i') }}
+                                @if ($incident->isOpen()) · berlangsung @else · selesai {{ $incident->ended_at->format('H:i') }} @endif
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @unless ($incident->isOpen())
+                                <x-badge variant="gray">Selesai</x-badge>
+                            @endunless
+                            @if ($incident->acknowledger)
+                                <x-badge variant="success">Ditangani oleh {{ $incident->acknowledger->name }}</x-badge>
+                            @else
+                                <x-badge variant="error">Belum ditangani</x-badge>
+                            @endif
+                        </div>
                     </li>
                 @empty
-                    <li class="py-2 text-slate-500">Belum ada insiden.</li>
+                    <li><x-empty title="Belum ada insiden." icon="check" /></li>
                 @endforelse
             </ul>
-        </section>
+        </x-card>
     </div>
 
     <script id="dashboard-data" type="application/json">{!! json_encode($snapshot, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) !!}</script>

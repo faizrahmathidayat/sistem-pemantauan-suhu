@@ -16,11 +16,25 @@ let chart = null;
 let chartTick = 0;
 
 const STATUS = {
-    aman: { label: 'AMAN', border: 'border-emerald-500', badge: 'bg-emerald-100 text-emerald-800', dot: '🟢' },
-    waspada: { label: 'WASPADA', border: 'border-yellow-400', badge: 'bg-yellow-100 text-yellow-800', dot: '🟡' },
-    bahaya: { label: 'BAHAYA', border: 'border-red-600', badge: 'bg-red-100 text-red-800', pulse: true, dot: '🔴' },
-    offline: { label: 'OFFLINE', border: 'border-slate-400', badge: 'bg-slate-200 text-slate-700', dot: '⚪' },
-    tanpa_data: { label: 'BELUM ADA DATA', border: 'border-slate-300', badge: 'bg-slate-100 text-slate-600', dot: '⚪' },
+    aman: { label: 'AMAN', border: 'border-l-success-500', badge: 'bg-success-50 text-success-700', dot: 'bg-success-500' },
+    waspada: { label: 'WASPADA', border: 'border-l-warning-500', badge: 'bg-warning-50 text-warning-700', dot: 'bg-warning-500' },
+    bahaya: { label: 'BAHAYA', border: 'border-l-error-600', badge: 'bg-error-50 text-error-700', pulse: true, dot: 'bg-error-500' },
+    offline: { label: 'OFFLINE', border: 'border-l-gray-400', badge: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
+    tanpa_data: { label: 'BELUM ADA DATA', border: 'border-l-gray-300', badge: 'bg-gray-100 text-gray-600', dot: 'bg-gray-300' },
+};
+
+// Ikon garis kecil (24x24) yang dipakai di string HTML; isinya statis.
+const icon = (paths, cls = 'size-5') =>
+    `<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const ICON = {
+    thermometer: icon('<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0Z"/>', 'size-6'),
+    droplet: icon('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>', 'size-4'),
+    clock: icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'size-3.5'),
+    up: icon('<path d="M12 19V5M6 11l6-6 6 6"/>', 'size-3.5'),
+    down: icon('<path d="M12 5v14M6 13l6 6 6-6"/>', 'size-3.5'),
+    alert: icon('<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4.5M12 17.5v.01"/>', 'size-5 shrink-0'),
+    offline: icon('<path d="M2 8.8a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5v.01M3 3l18 18"/>', 'size-5 shrink-0'),
+    tool: icon('<path d="M14.5 6.5a4 4 0 0 0-5 5L3 18l3 3 6.5-6.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5 2.5-2.5Z"/>', 'size-5 shrink-0'),
 };
 
 const esc = (value) =>
@@ -67,7 +81,7 @@ function renderAccessNotice() {
     if (!notice) {
         notice = document.createElement('p');
         notice.id = 'no-access-notice';
-        notice.className = 'mb-3 rounded-lg bg-slate-200 px-3 py-2 text-sm text-slate-700';
+        notice.className = 'mb-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700';
         notice.textContent = 'Anda belum ditugaskan ke gudang mana pun. Hubungi administrator.';
         document.getElementById('warehouse-chips').before(notice);
     }
@@ -82,8 +96,9 @@ function renderWarehouseChips() {
 
     const chip = (key, label, status, open) => {
         const active = String(selectedWarehouse) === String(key) ? 'chip-active' : '';
-        const badge = open > 0 ? ` <span class="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">${open}</span>` : '';
-        return `<button type="button" data-warehouse="${key}" class="chip ${active}">${(STATUS[status] ?? STATUS.tanpa_data).dot} ${esc(label)}${badge}</button>`;
+        const badge = open > 0 ? `<span class="ml-1 rounded-full bg-error-600 px-1.5 text-[10px] font-semibold text-white">${open}</span>` : '';
+        const dot = `<span class="size-2 shrink-0 rounded-full ${(STATUS[status] ?? STATUS.tanpa_data).dot}"></span>`;
+        return `<button type="button" data-warehouse="${key}" class="chip ${active}">${dot}${esc(label)}${badge}</button>`;
     };
 
     const all = state.warehouses.length > 1
@@ -97,21 +112,21 @@ function renderBanners() {
         .map((b) => {
             const acknowledged = b.acknowledged_by !== null;
             const palette = {
-                'kritis-false': 'bg-red-600 text-white',
-                'kritis-true': 'bg-amber-400 text-slate-900',
-                'offline-false': 'bg-stone-700 text-orange-100',
-                'offline-true': 'bg-stone-500 text-white',
+                'kritis-false': 'bg-error-600 text-white',
+                'kritis-true': 'bg-warning-500 text-gray-900',
+                'offline-false': 'bg-gray-800 text-white',
+                'offline-true': 'bg-gray-600 text-white',
             }[`${b.kind}-${acknowledged}`];
-            const icon = b.kind === 'kritis' ? '🚨' : '📡';
+            const glyph = acknowledged ? ICON.tool : b.kind === 'kritis' ? ICON.alert : ICON.offline;
             const where = `<strong>${esc(b.location)}</strong> — ${esc(b.message)}`;
             const text = acknowledged
-                ? `🛠️ Sedang ditangani oleh <strong>${esc(b.acknowledged_by)}</strong>. ${where}`
-                : `${icon} <strong>${b.kind === 'kritis' ? 'KRITIS:' : 'SENSOR OFFLINE:'}</strong> ${where}`;
+                ? `Sedang ditangani oleh <strong>${esc(b.acknowledged_by)}</strong>. ${where}`
+                : `<strong>${b.kind === 'kritis' ? 'KRITIS:' : 'SENSOR OFFLINE:'}</strong> ${where}`;
             const button = acknowledged || !state.can_acknowledge
                 ? ''
-                : `<button type="button" data-ack="${b.incident_id}" class="w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow sm:w-auto">Tandai Telah Ditangani</button>`;
+                : `<button type="button" data-ack="${b.incident_id}" class="w-full rounded-lg bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 sm:w-auto">Tandai Telah Ditangani</button>`;
 
-            return `<div class="${palette}"><div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p>${text}</p>${button}</div></div>`;
+            return `<div class="${palette}"><div class="flex flex-col gap-3 px-4 py-3 text-sm md:px-6 sm:flex-row sm:items-center sm:justify-between"><p class="flex items-start gap-2">${glyph}<span>${text}</span></p>${button}</div></div>`;
         })
         .join('');
     document.getElementById('banners').innerHTML = html;
@@ -122,7 +137,7 @@ function renderZones() {
     const zones = visibleZones();
     if (zones.length === 0) {
         container.innerHTML = state.has_access
-            ? '<p class="rounded-xl bg-white p-4 text-slate-500">Belum ada zona terdaftar di gudang ini.</p>'
+            ? '<p class="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500 sm:col-span-2 xl:col-span-3">Belum ada zona terdaftar di gudang ini.</p>'
             : '';
         return;
     }
@@ -134,40 +149,48 @@ function renderZones() {
             const s = STATUS[z.status] ?? STATUS.tanpa_data;
             const danger = z.status === 'bahaya';
             const dot = s.pulse
-                ? '<span class="relative mr-1 inline-flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-red-600"></span></span>'
+                ? '<span class="relative inline-flex size-2"><span class="absolute inline-flex size-full animate-ping rounded-full bg-error-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-error-600"></span></span>'
                 : '';
-            const arrow = z.trend === 'naik'
-                ? '<span class="text-2xl font-bold text-red-600" title="Suhu di atas batas">↑</span>'
+            const trend = z.trend === 'naik'
+                ? `<span class="inline-flex items-center gap-0.5 rounded-full bg-error-50 px-2 py-0.5 text-xs font-medium text-error-700" title="Suhu di atas batas">${ICON.up} Di atas batas</span>`
                 : z.trend === 'turun'
-                    ? '<span class="text-2xl font-bold text-blue-600" title="Suhu di bawah batas">↓</span>'
+                    ? `<span class="inline-flex items-center gap-0.5 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700" title="Suhu di bawah batas">${ICON.down} Di bawah batas</span>`
                     : '';
             const limit = z.trend === 'turun' ? `(Min: ${num(z.temp_min)}°C)` : `(Max: ${num(z.temp_max)}°C)`;
-            const limitColor = z.trend ? 'text-red-600' : 'text-slate-500';
+            const limitColor = z.trend ? 'font-medium text-error-600' : 'text-gray-500';
             const humidityLimit = z.humidity_min !== null && z.humidity_max !== null
-                ? ` · RH ${num(z.humidity_min)}–${num(z.humidity_max)}%`
+                ? `<span class="text-xs text-gray-500">RH ${num(z.humidity_min)}–${num(z.humidity_max)}%</span>`
                 : '';
             // Bila penyebab bahaya adalah kelembapan, sorot barisnya seperti suhu.
             const humidityArrow = z.humidity_trend === 'naik' ? ' ↑' : z.humidity_trend === 'turun' ? ' ↓' : '';
-            const humidityClass = z.humidity_trend ? 'font-bold text-red-600' : '';
+            const humidityClass = z.humidity_trend ? 'font-semibold text-error-600' : 'text-gray-700';
             const humidityBound = z.humidity_trend === 'naik'
                 ? ` (Max: ${num(z.humidity_max)}%)`
                 : z.humidity_trend === 'turun' ? ` (Min: ${num(z.humidity_min)}%)` : '';
             const products = z.products.length > 0
-                ? `<div class="mt-2 flex flex-wrap gap-1">${z.products.map((p) => `<span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">${esc(p)}</span>`).join('')}</div>`
+                ? `<div class="mt-3 flex flex-wrap gap-1.5">${z.products.map((p) => `<span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">${esc(p)}</span>`).join('')}</div>`
                 : '';
-            const warehouseLabel = showWarehouse ? `<p class="text-xs text-slate-500">${esc(z.warehouse_name)}</p>` : '';
+            const warehouseLabel = showWarehouse ? `<p class="truncate text-xs text-gray-500">${esc(z.warehouse_name)}</p>` : '';
 
-            return `<article class="rounded-xl border-l-8 ${s.border} bg-white p-4 shadow-sm ${danger ? 'ring-2 ring-red-200' : ''}">
-                <div class="flex items-center justify-between gap-2">
-                    <div><h3 class="font-semibold">${esc(z.name)}</h3>${warehouseLabel}</div>
-                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${s.badge}">${dot}${s.label}</span>
+            return `<article class="rounded-2xl border border-l-4 border-gray-200 ${s.border} bg-white p-5 ${danger ? 'ring-4 ring-error-100' : ''}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0"><h3 class="truncate text-base font-semibold text-gray-800">${esc(z.name)}</h3>${warehouseLabel}</div>
+                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.badge}">${dot}${s.label}</span>
                 </div>
-                <div class="mt-2 flex flex-wrap items-baseline gap-2">
-                    <span class="text-4xl font-bold ${danger ? 'text-red-600' : ''}">${num(z.temperature)}°C</span>${arrow}
-                    <span class="text-sm font-medium ${limitColor}">${limit}</span>
+                <div class="mt-4 flex items-center gap-3">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-xl ${danger ? 'bg-error-50 text-error-600' : 'bg-gray-100 text-gray-600'}">${ICON.thermometer}</span>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span class="text-3xl font-semibold ${danger ? 'text-error-600' : 'text-gray-800'}">${num(z.temperature)}°C</span>${trend}
+                        </div>
+                        <p class="text-xs ${limitColor}">${limit}</p>
+                    </div>
                 </div>
-                <p class="mt-1 text-sm text-slate-500">💧 <span class="${humidityClass}">${num(z.humidity)}%${humidityArrow}${humidityBound}</span>${humidityLimit}</p>
-                <p class="text-xs text-slate-400">update ${ago(z.last_seen_seconds)}</p>
+                <div class="mt-4 flex items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2 text-sm">
+                    <span class="flex items-center gap-2 ${humidityClass}">${ICON.droplet}<span>${num(z.humidity)}%${humidityArrow}${humidityBound}</span></span>
+                    ${humidityLimit}
+                </div>
+                <p class="mt-3 flex items-center gap-1.5 text-xs text-gray-400">${ICON.clock} update ${ago(z.last_seen_seconds)}</p>
                 ${products}
             </article>`;
         })
@@ -219,9 +242,9 @@ async function loadChart() {
     const flat = (v) => (v === null ? null : labels.map(() => v));
 
     const datasets = [
-        { label: isTemp ? 'Suhu (°C)' : 'Kelembapan (%)', data: values, borderColor: isTemp ? '#2563eb' : '#0ea5e9', borderWidth: 2, pointRadius: 0, tension: 0.3 },
-        { label: `Batas maks (${unit})`, data: flat(max), borderColor: '#dc2626', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
-        { label: `Batas min (${unit})`, data: flat(min), borderColor: '#f59e0b', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
+        { label: isTemp ? 'Suhu (°C)' : 'Kelembapan (%)', data: values, borderColor: isTemp ? '#4f7a5d' : '#0ea5e9', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+        { label: `Batas maks (${unit})`, data: flat(max), borderColor: '#d92d20', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
+        { label: `Batas min (${unit})`, data: flat(min), borderColor: '#dc6803', borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
     ].filter((d) => d.data !== null);
 
     empty.hidden = labels.length > 0;
@@ -234,8 +257,11 @@ async function loadChart() {
             maintainAspectRatio: false,
             animation: false,
             interaction: { mode: 'index', intersect: false },
-            scales: { x: { ticks: { maxTicksLimit: 8 } } },
-            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                x: { ticks: { maxTicksLimit: 8, color: '#667085' }, grid: { display: false }, border: { color: '#e4e7ec' } },
+                y: { ticks: { color: '#667085' }, grid: { color: '#f2f4f7' }, border: { display: false } },
+            },
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: '#475467' } } },
         },
     });
 }
