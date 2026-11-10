@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WarehouseMonitorController;
 use App\Http\Controllers\ZoneManagementController;
 use App\Http\Controllers\ZoneReadingsController;
 use App\Http\Controllers\ZoneSettingsController;
@@ -53,6 +54,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
 
     Route::resource('warehouses', WarehouseController::class)->except('show')->middleware('can:warehouse.manage');
+    Route::middleware('can:warehouse.manage')->group(function () {
+        Route::post('/warehouses/{warehouse}/monitor', [WarehouseMonitorController::class, 'store'])->name('warehouses.monitor.store');
+        Route::delete('/warehouses/{warehouse}/monitor', [WarehouseMonitorController::class, 'destroy'])->name('warehouses.monitor.destroy');
+    });
     Route::resource('users', UserController::class)->except('show')->middleware('can:user.manage');
     Route::resource('roles', RoleController::class)->except('show')->middleware('can:role.manage');
 

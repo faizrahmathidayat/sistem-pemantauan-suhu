@@ -7,6 +7,7 @@ use App\Models\Warehouse;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -40,11 +41,18 @@ class WarehouseController extends Controller
         return redirect()->route('warehouses.index')->with('status', "Gudang {$warehouse->name} ditambahkan.");
     }
 
-    public function edit(Request $request, Warehouse $warehouse): View
+    public function edit(Request $request, Warehouse $warehouse): Response
     {
         abort_unless($request->user()->canAccessWarehouse($warehouse), 403);
 
-        return view('warehouses.edit', ['warehouse' => $warehouse->load(['zones' => fn ($zones) => $zones->orderBy('name')->with('products')])]);
+        $response = response()->view('warehouses.edit', ['warehouse' => $warehouse->load(['zones' => fn ($zones) => $zones->orderBy('name')->with('products')])]);
+
+        // no-store: alamat monitor sekali-tampil tidak boleh muncul lagi dari cache browser lewat tombol Back.
+        if (session()->has('new_monitor_url')) {
+            $response->header('Cache-Control', 'no-store, private');
+        }
+
+        return $response;
     }
 
     public function update(WarehouseRequest $request, Warehouse $warehouse, AuditLogger $audit): RedirectResponse

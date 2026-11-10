@@ -5,7 +5,48 @@
 @section('content')
     <x-page-header :title="'Ubah gudang '.$warehouse->name" :crumbs="[['label' => 'Gudang', 'url' => route('warehouses.index')]]" />
 
+    <x-flash />
+
+    @php($newMonitorUrl = session('new_monitor_url'))
+    @if ($newMonitorUrl)
+        <section data-monitor-url class="mb-4 max-w-2xl rounded-2xl border-2 border-warning-500 bg-warning-50 p-5"
+                 x-data="{ copied: false, async copy() { try { await navigator.clipboard.writeText(this.$refs.url.textContent.trim()); this.copied = true; setTimeout(() => this.copied = false, 2000); } catch (e) { const range = document.createRange(); range.selectNodeContents(this.$refs.url); getSelection().removeAllRanges(); getSelection().addRange(range); } } }">
+            <h2 class="text-base font-semibold text-gray-800">Alamat monitor (hanya tampil sekali)</h2>
+            <p class="mt-1 text-sm text-gray-700">Buka alamat ini di browser TV lalu jadikan layar penuh. Setelah halaman ini ditutup, alamat tidak bisa dilihat lagi; bila hilang, buat ulang alamatnya.</p>
+            <p x-ref="url" class="mt-3 rounded-lg bg-white px-3 py-2 font-mono text-sm break-all select-all">{{ $newMonitorUrl }}</p>
+            <button type="button" class="btn btn-secondary btn-sm mt-3" @click="copy()"><span x-text="copied ? 'Tersalin' : 'Salin alamat'">Salin alamat</span></button>
+        </section>
+    @endif
+
     @include('warehouses._form', ['action' => route('warehouses.update', $warehouse)])
+
+    @can('warehouse.manage')
+        <x-card title="Layar monitor" class="mt-6 max-w-2xl" data-monitor-section>
+            <p class="text-sm text-gray-600">
+                Halaman layar penuh untuk TV di gudang ini, bisa dilihat semua karyawan tanpa login. Siapa pun yang memegang alamatnya bisa melihat suhu dan kelembapan gudang, jadi jangan dibagikan di luar.
+            </p>
+            <p class="mt-2 text-sm font-medium {{ $warehouse->hasMonitorToken() ? 'text-success-700' : 'text-gray-500' }}">
+                {{ $warehouse->hasMonitorToken() ? 'Alamat monitor aktif.' : 'Belum ada alamat monitor.' }}
+            </p>
+
+            <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                <form method="POST" action="{{ route('warehouses.monitor.store', $warehouse) }}"
+                      @if ($warehouse->hasMonitorToken()) onsubmit="return confirm('Buat alamat baru? Alamat lama langsung mati dan TV harus diisi alamat baru.')" @endif>
+                    @csrf
+                    <button type="submit" class="btn btn-secondary w-full sm:w-auto"><x-icon name="key" class="size-4" /> {{ $warehouse->hasMonitorToken() ? 'Buat ulang alamat' : 'Buat alamat monitor' }}</button>
+                </form>
+
+                @if ($warehouse->hasMonitorToken())
+                    <form method="POST" action="{{ route('warehouses.monitor.destroy', $warehouse) }}"
+                          onsubmit="return confirm('Matikan alamat monitor? TV yang memakainya langsung berhenti menampilkan data.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger w-full sm:w-auto">Matikan alamat</button>
+                    </form>
+                @endif
+            </div>
+        </x-card>
+    @endcan
 
     <x-card title="Zona di gudang ini" flush class="mt-6 max-w-2xl">
         <x-slot:actions>

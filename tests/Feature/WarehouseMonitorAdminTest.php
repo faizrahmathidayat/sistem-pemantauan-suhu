@@ -1,0 +1,152 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\Permission;
+use App\Models\AuditLog;
+use App\Models\User;
+use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class WarehouseMonitorAdminTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Warehouse $warehouse;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->warehouse = Warehouse::factory()->create(['name' => 'Gudang Layar']);
+    }
+
+    private function manager(Warehouse ...$warehouses): User
+    {
+        return User::factory()->withPermissions(Permission::WarehouseManage)->assignedTo(...$warehouses)->create();
+    }
+
+    private function issue(User $actor): string
+    {
+        $this->actingAs($actor)->post(route('warehouses.monitor.store', $this->warehouse))->assertRedirect(route('warehouses.edit', $this->warehouse));
+
+        return (string) session('new_monitor_url');
+    }
+
+    private function path(string $url): string
+    {
+        return parse_url($url, PHP_URL_PATH);
+    }
+
+    public function test_store_issues_a_token_and_shows_the_full_url_once(): void
+    {
+        $actor = $this->manager($this->warehouse);
+        $url = $this->issue($actor);
+        $token = basename($url);
+
+        $this->assertSame(route('monitor.show', $token, false), $this->path($url));
+        $this->assertSame(40, strlen($token));
+
+        $this->get(route('warehouses.edit', $this->warehouse))->assertOk()->assertSee($url, false);
+        $this->get(route('warehouses.edit', $this->warehouse))->assertOk()->assertDontSee($token, false);
+    }
+
+    public function test_edit_page_with_the_new_url_is_not_cacheable(): void
+    {
+        $this->issue($this->manager($this->warehouse));
+
+        $response = $this->get(route('warehouses.edit', $this->warehouse))->assertOk();
+
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_url_works_and_old_one_stops_after_reissue(): void
+    {
+        $actor = $this->manager($this->warehouse);
+        $first = $this->path($this->issue($actor));
+        $this->get($first)->assertOk();
+
+        $second = $this->path($this->issue($actor));
+
+        $this->assertNotSame($first, $second);
+        $this->get($first)->assertNotFound();
+        $this->get($second)->assertOk();
+    }
+
+    public function test_destroy_revokes_and_a_second_destroy_is_a_harmless_noop(): void
+    {
+        $actor = $this->manager($this->warehouse);
+        $path = $this->path($this->issue($actor));
+
+        $this->actingAs($actor)->delete(route('warehouses.monitor.destroy', $this->warehouse))->assertRedirect(route('warehouses.edit', $this->warehouse));
+        $this->get($path)->assertNotFound();
+        $this->assertFalse($this->warehouse->fresh()->hasMonitorToken());
+
+        $this->actingAs($actor)->delete(route('warehouses.monitor.destroy', $this->warehouse))->assertRedirect(route('warehouses.edit', $this->warehouse));
+        $this->assertSame(1, AuditLog::where('event', 'warehouse.monitor_revoked')->count());
+    }
+
+    public function test_actions_are_recorded_in_the_audit_log_without_secrets(): void
+    {
+        $actor = $this->manager($this->warehouse);
+        $token = basename($this->issue($actor));
+        $this->actingAs($actor)->delete(route('warehouses.monitor.destroy', $this->warehouse));
+
+        $issued = AuditLog::where('event', 'warehouse.monitor_issued')->sole();
+        $revoked = AuditLog::where('event', 'warehouse.monitor_revoked')->sole();
+
+        $this->assertSame('Gudang Layar', $issued->subject_label);
+        $this->assertSame($actor->id, $issued->user_id);
+        $this->assertArrayHasKey('monitor', $issued->diff);
+        $this->assertArrayHasKey('monitor', $revoked->diff);
+        $this->assertSame('Membuat alamat monitor', $issued->eventLabel());
+        $this->assertSame('Mematikan alamat monitor', $revoked->eventLabel());
+
+        $everything = json_encode([$issued->diff, $revoked->diff]);
+        $this->assertStringNotContainsString($token, $everything);
+        $this->assertStringNotContainsString(hash('sha256', $token), $everything);
+    }
+
+    public function test_requires_warehouse_manage_and_access_to_that_warehouse(): void
+    {
+        $noPermission = User::factory()->withPermissions(Permission::DashboardView)->assignedTo($this->warehouse)->create();
+        $otherWarehouse = Warehouse::factory()->create();
+        $wrongWarehouse = $this->manager($otherWarehouse);
+
+        foreach ([$noPermission, $wrongWarehouse] as $user) {
+            $this->actingAs($user)->post(route('warehouses.monitor.store', $this->warehouse))->assertForbidden();
+            $this->actingAs($user)->delete(route('warehouses.monitor.destroy', $this->warehouse))->assertForbidden();
+        }
+        $this->assertFalse($this->warehouse->fresh()->hasMonitorToken());
+
+        $this->actingAs(User::factory()->create())->post(route('warehouses.monitor.store', $this->warehouse))->assertRedirect();
+        $this->assertTrue($this->warehouse->fresh()->hasMonitorToken());
+    }
+
+    public function test_guests_are_redirected_to_login(): void
+    {
+        $this->post(route('warehouses.monitor.store', $this->warehouse))->assertRedirect('/login');
+        $this->delete(route('warehouses.monitor.destroy', $this->warehouse))->assertRedirect('/login');
+    }
+
+    public function test_edit_page_shows_status_and_the_right_buttons(): void
+    {
+        $actor = $this->manager($this->warehouse);
+
+        $this->actingAs($actor)->get(route('warehouses.edit', $this->warehouse))->assertOk()
+            ->assertSee('Layar monitor')
+            ->assertSee('Buat alamat monitor')
+            ->assertDontSee('Buat ulang alamat')
+            ->assertDontSee('Matikan alamat');
+
+        $this->warehouse->issueMonitorToken();
+        $hash = $this->warehouse->fresh()->monitor_token_hash;
+
+        $this->actingAs($actor)->get(route('warehouses.edit', $this->warehouse))->assertOk()
+            ->assertSee('Buat ulang alamat')
+            ->assertSee('Matikan alamat')
+            ->assertDontSee('Buat alamat monitor')
+            ->assertDontSee($hash, false);
+    }
+}
