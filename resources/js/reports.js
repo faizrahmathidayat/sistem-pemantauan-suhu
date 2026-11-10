@@ -14,14 +14,16 @@ if (dataElement && canvas) {
     const span = dates.length > 1 ? dates[dates.length - 1] - dates[0] : 0;
 
     // Rentang pendek cukup jam; rentang panjang butuh tanggal (dan jam bila bucket lebih kecil dari sehari).
+    // Zona waktu aplikasi (bukan zona browser) supaya jam di grafik sama dengan tabel, daftar insiden, dan CSV.
+    const timeZone = data.timezone;
     const formatLabel = (date) => {
         if (span <= 1.5 * dayMs) {
-            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone });
         }
         if (data.bucket_seconds >= 86400) {
-            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', timeZone });
         }
-        return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone });
     };
 
     const flat = (value) => (value === null ? null : data.labels.map(() => value));

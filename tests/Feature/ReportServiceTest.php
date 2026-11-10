@@ -130,10 +130,22 @@ class ReportServiceTest extends TestCase
 
         $row = $this->service->summary(collect([$this->zone]), $this->day)[0];
 
-        $this->assertSame(5, $row['incident_count']);
+        // Sensor offline tidak dihitung sebagai insiden (punya kolom sendiri), jadi 4 dari 5.
+        $this->assertSame(4, $row['incident_count']);
         // Gabungan 10:00-12:00 (120 mnt) + 09-11 12:00-15:00 (180 mnt); tumpang tindih dihitung sekali.
         $this->assertSame(300, $row['incident_minutes']);
         $this->assertSame(20, $row['offline_minutes']);
+    }
+
+    public function test_offline_only_zone_has_no_incidents_but_has_offline_minutes(): void
+    {
+        $this->incident(IncidentReason::SensorOffline, '2026-11-10 02:00:00', '2026-11-10 02:40:00');
+
+        $row = $this->service->summary(collect([$this->zone]), $this->day)[0];
+
+        $this->assertSame(0, $row['incident_count']);
+        $this->assertSame(0, $row['incident_minutes']);
+        $this->assertSame(40, $row['offline_minutes']);
     }
 
     public function test_series_buckets_keep_min_avg_and_max(): void

@@ -20,6 +20,9 @@
     {{-- Judul khusus cetak (menu dan formulir disembunyikan saat dicetak) --}}
     <div class="hidden print:block">
         <h1 class="text-xl font-semibold">Laporan sensor {{ $filters->warehouse?->name }}</h1>
+        @if ($filters->zone)
+            <p class="text-sm">Zona: {{ $filters->zone->name }}</p>
+        @endif
         <p class="text-sm">Periode: {{ $filters->period->label() }}</p>
         <p class="text-sm">Dicetak oleh {{ auth()->user()->name }} pada {{ now()->format('d-m-Y H:i') }}</p>
     </div>
@@ -123,7 +126,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">"Dalam batas" dihitung terhadap batas zona saat ini, bukan batas pada saat pembacaan.</p>
+                <p class="mt-2 text-xs text-slate-500">"Dalam batas" dihitung terhadap batas zona saat ini, bukan batas pada saat pembacaan. "Insiden" tidak menghitung sensor offline (punya kolom sendiri).</p>
             </section>
 
             @if ($chart !== null)

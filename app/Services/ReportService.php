@@ -135,7 +135,8 @@ final class ReportService
             ->all();
 
         return [
-            'incident_count' => $incidents->count(),
+            // Sensor offline punya kolom sendiri (lama offline), jadi tidak ikut dihitung sebagai insiden.
+            'incident_count' => $incidents->filter(fn (Incident $i) => $i->reason !== IncidentReason::SensorOffline)->count(),
             'incident_minutes' => $this->unionMinutes($intervals(fn (Incident $i) => $i->reason !== IncidentReason::SensorOffline)),
             'offline_minutes' => $this->unionMinutes($intervals(fn (Incident $i) => $i->reason === IncidentReason::SensorOffline)),
         ];

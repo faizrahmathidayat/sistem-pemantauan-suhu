@@ -64,7 +64,7 @@ Ubah lewat menu **Batas Zona** di dashboard (`/zones`; perlu izin `zone.update`,
 Menu **Laporan** (`/reports`, izin `report.view`) menampilkan riwayat sensor:
 
 - **Filter:** gudang, zona (untuk grafik dan data mentah), dan periode: 24 jam, 7 hari (bawaan), 30 hari, 90 hari, atau **tanggal sendiri**. Data hanya disimpan 90 hari, jadi tanggal awal tidak boleh lebih lama dari itu. Pilihan ikut tersimpan di alamat halaman.
-- **Ringkasan per zona:** suhu dan kelembapan terendah / tertinggi / rata-rata, jumlah pembacaan, jumlah insiden, lama insiden, lama sensor offline, dan persentase pembacaan yang dalam batas (dihitung terhadap batas zona *saat ini*).
+- **Ringkasan per zona:** suhu dan kelembapan terendah / tertinggi / rata-rata, jumlah pembacaan, jumlah insiden (tanpa sensor offline), lama insiden, lama sensor offline, dan persentase pembacaan yang dalam batas (dihitung terhadap batas zona *saat ini*).
 - **Grafik** zona terpilih dengan garis rata-rata, terendah, dan tertinggi per interval (supaya lonjakan singkat tidak tersembunyi) serta garis batas zona, plus daftar insiden zona itu.
 - **Unduh CSV:** ringkasan semua zona di gudang itu, dan data mentah satu zona. File berformat UTF-8 (dengan BOM), pemisah koma, titik desimal. Excel berbahasa Indonesia kadang menaruh semuanya dalam satu kolom; buka lewat **Data → From Text/CSV**.
 - **Cetak / Simpan PDF:** memakai fitur cetak browser (menu dan formulir tidak ikut tercetak). Tidak ada pembuatan PDF di server.

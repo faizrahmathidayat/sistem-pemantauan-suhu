@@ -99,7 +99,8 @@ class ReportPageTest extends TestCase
         $this->actingAs($this->operator($this->a))->get('/reports')
             ->assertOk()
             ->assertSee('Belum ada data pada periode ini.')
-            ->assertSee('–');
+            ->assertSee('– / – / –', false)
+            ->assertDontSee('0,0 / 0,0');
     }
 
     public function test_invalid_period_shows_error_message_and_no_summary(): void
@@ -138,6 +139,15 @@ class ReportPageTest extends TestCase
             ->assertDontSee('Suhu terlalu rendah');
     }
 
+    public function test_print_header_names_warehouse_zone_and_period(): void
+    {
+        $this->actingAs($this->operator($this->a))->get("/reports?zona={$this->a1->id}&periode=24h")
+            ->assertOk()
+            ->assertSee('Laporan sensor Gudang A')
+            ->assertSee('Zona: Zona A1')
+            ->assertSee('Periode: 9 Nov 2026 12:00 – 10 Nov 2026 12:00');
+    }
+
     public function test_page_states_retention(): void
     {
         $this->actingAs($this->operator($this->a))->get('/reports')->assertSee('Data disimpan 90 hari');
@@ -160,7 +170,11 @@ class ReportPageTest extends TestCase
         $this->assertEquals(15, $data['temp_min']);
         $this->assertEquals(25, $data['temp_max']);
         $this->assertSame('</script><b>Zona', $data['zone']);
+        $this->assertSame('Asia/Jakarta', $data['timezone']);
         $this->assertStringNotContainsString('</script><b>', $response->getContent());
+        // Tanpa JSON_HEX_TAG json_encode hanya meng-escape "/" (<\/script>); dengan flag itu tidak ada "<" mentah.
+        preg_match('~<script id="report-data" type="application/json">(.*?)</script>~s', $response->getContent(), $body);
+        $this->assertStringNotContainsString('<', $body[1]);
     }
 
     public function test_user_without_any_warehouse_sees_notice(): void

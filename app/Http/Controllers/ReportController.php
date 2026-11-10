@@ -34,6 +34,7 @@ class ReportController extends Controller
                 $chart = [
                     'zone' => $zone->name,
                     'warehouse' => $filters->warehouse->name,
+                    'timezone' => config('app.timezone'), // label grafik memakai zona waktu aplikasi, bukan zona browser
                     'temp_min' => $zone->temp_min,
                     'temp_max' => $zone->temp_max,
                     'humidity_min' => $zone->humidity_min,

@@ -9,6 +9,7 @@ use App\Models\Zone;
 use App\Support\ReportFilters;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -35,6 +36,12 @@ class ReportFiltersTest extends TestCase
         $this->a2 = Zone::factory()->create(['warehouse_id' => $this->a->id, 'name' => 'Zona A2', 'device_id' => 'dev-a2']);
         $this->a1 = Zone::factory()->create(['warehouse_id' => $this->a->id, 'name' => 'Zona A1', 'device_id' => 'dev-a1']);
         $this->b1 = Zone::factory()->create(['warehouse_id' => $this->b->id, 'name' => 'Zona B1', 'device_id' => 'dev-b1']);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function operator(Warehouse ...$warehouses): User
@@ -131,6 +138,7 @@ class ReportFiltersTest extends TestCase
 
     public function test_custom_period_uses_from_and_to(): void
     {
+        Carbon::setTestNow('2026-11-10 12:00:00');
         $now = now();
         $filters = $this->resolve($this->operator($this->a), [
             'periode' => 'custom', 'dari' => $now->copy()->subDays(5)->format('Y-m-d'), 'sampai' => $now->copy()->subDays(1)->format('Y-m-d'),
