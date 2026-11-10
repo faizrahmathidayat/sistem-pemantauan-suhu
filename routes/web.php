@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:report.view')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/summary.csv', [ReportController::class, 'summaryCsv'])->name('reports.summary-csv');
+        Route::get('/reports/readings.csv', [ReportController::class, 'readingsCsv'])->name('reports.readings-csv');
     });
 
     Route::get('/audit-logs',[AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');

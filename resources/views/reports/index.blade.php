@@ -77,9 +77,15 @@
         @endif
 
         @if ($rows !== null)
-            <p class="mt-3 text-sm text-slate-500 print:hidden">
-                {{ $filters->warehouse->name }} · {{ $filters->period->label() }}
-            </p>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 print:hidden">
+                <p class="text-sm text-slate-500">{{ $filters->warehouse->name }} · {{ $filters->period->label() }}</p>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('reports.summary-csv', $downloadQuery) }}" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Unduh ringkasan (CSV)</a>
+                    @if ($filters->zone)
+                        <a href="{{ route('reports.readings-csv', $downloadQuery) }}" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Unduh data mentah (CSV)</a>
+                    @endif
+                </div>
+            </div>
 
             <section class="mt-3 rounded-xl bg-white p-4 shadow-sm">
                 <h2 class="font-semibold">Ringkasan per zona</h2>
