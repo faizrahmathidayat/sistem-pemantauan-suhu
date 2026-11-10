@@ -9,10 +9,14 @@
     <title>{{ $snapshot['warehouse'] }} · Monitor</title>
     @vite(['resources/css/app.css', 'resources/js/monitor.js'])
 </head>
-<body class="min-h-screen cursor-none bg-[#0b1410] text-white antialiased">
-    <div id="monitor" data-url="{{ $dataUrl }}" class="flex min-h-screen flex-col gap-[1.2vw] p-[2vw]">
+<body class="h-screen cursor-none overflow-hidden bg-[#0b1410] text-white antialiased">
+    <div id="monitor" data-url="{{ $dataUrl }}" class="flex h-screen flex-col gap-[1.2vw] overflow-hidden p-[2vw]">
         <header class="flex items-center justify-between gap-6">
-            <h1 id="monitor-title" class="min-w-0 truncate text-[clamp(1.5rem,3vw,3.5rem)] font-bold">{{ $snapshot['warehouse'] }}</h1>
+            <div class="min-w-0">
+                <h1 id="monitor-title" class="truncate text-[clamp(1.5rem,3vw,3.5rem)] font-bold">{{ $snapshot['warehouse'] }}</h1>
+                {{-- Penanda halaman; hanya tampil bila zona lebih banyak dari satu layar (digambar monitor.js) --}}
+                <p id="monitor-pager" hidden class="mt-1 flex items-center gap-[0.6vw] text-[clamp(0.9rem,1.3vw,1.6rem)] text-gray-400"></p>
+            </div>
             <div class="shrink-0 text-right">
                 <p id="monitor-clock" class="text-[clamp(1.5rem,3vw,3.5rem)] leading-none font-bold tabular-nums"></p>
                 <p id="monitor-date" class="mt-1 text-[clamp(0.9rem,1.3vw,1.6rem)] text-gray-400"></p>
@@ -22,9 +26,8 @@
         <div id="monitor-banner" class="rounded-3xl px-[2vw] py-[1.2vw]"></div>
         <div id="monitor-offline" hidden class="rounded-3xl bg-error-600 px-[2vw] py-[1vw] text-[clamp(1.1rem,2vw,2.4rem)] font-bold"></div>
 
-        <main id="monitor-zones" class="grid flex-1 auto-rows-fr gap-[1.2vw]" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr))"></main>
-
-        <footer id="monitor-footer" class="text-[clamp(0.8rem,1.1vw,1.3rem)] text-gray-400"></footer>
+        {{-- Tinggi sisa layar; jumlah kolom/baris dan ukuran huruf (--u) dipilih resources/js/monitor.js (fitGrid) agar semua zona muat tanpa menggulir. --}}
+        <main id="monitor-zones" class="grid min-h-0 flex-1 overflow-hidden"></main>
     </div>
 
     <script type="application/json" id="monitor-initial">@json($snapshot)</script>

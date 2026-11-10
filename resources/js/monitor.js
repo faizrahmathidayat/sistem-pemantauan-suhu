@@ -5,7 +5,14 @@ const POLL_MS = 10_000;
 const FETCH_TIMEOUT_MS = 8_000;
 const STALE_AFTER_MS = 45_000; // tanpa respons sukses selama ini = tampilkan "tidak terhubung"
 const RELOAD_AFTER_MS = 6 * 60 * 60 * 1000; // muat ulang berkala agar TV ikut versi aplikasi terbaru
-const COMPACT_ABOVE = 6; // lebih dari ini, kartu dikecilkan supaya muat satu layar
+const PER_PAGE = 6; // kartu per layar; lebih dari ini berganti halaman sendiri
+const PAGE_MS = 10_000; // lama tiap halaman tampil
+const MAX_COLS = 3; // lebih banyak kolom membuat kartu sempit dan nama zona terpotong
+
+// Satu kartu butuh kira-kira selebar 13u dan setinggi 11u (u = satuan ukuran huruf yang dihitung fitGrid);
+// angka ini dari jumlah ukuran huruf, jarak, dan tinggi baris isi kartu di renderZones.
+const CELL_W_U = 13;
+const CELL_H_U = 11;
 
 const root = document.getElementById('monitor');
 const dataUrl = root.dataset.url;
@@ -16,6 +23,7 @@ let receivedAt = Date.now(); // waktu lokal saat data terakhir diterima
 let lastSuccess = Date.now();
 let inFlight = false;
 let reloadChecking = false;
+let page = 0; // halaman zona yang sedang tampil (mulai dari 0)
 let poller = null;
 
 const LEVEL = {
@@ -88,32 +96,82 @@ function renderBanner() {
     banner.className = `rounded-3xl px-[2vw] py-[1.2vw] ${LEVEL[level] ?? LEVEL.tanpa_data}`;
     banner.innerHTML = `
         <p class="text-[clamp(1.5rem,3.4vw,4rem)] leading-tight font-extrabold">${esc(headline)}</p>
-        ${detail ? `<p class="mt-1 text-[clamp(1rem,1.9vw,2.2rem)] font-semibold opacity-95">${esc(detail)}</p>` : ''}`;
+        ${detail ? `<p class="mt-1 line-clamp-2 text-[clamp(1rem,1.9vw,2.2rem)] font-semibold opacity-95">${esc(detail)}</p>` : ''}`;
+}
+
+// Ukuran di dalam kartu dikali --u, yang dipasang fitGrid sesuai jumlah zona dan ukuran layar.
+const u = (k) => `calc(var(--u, 20px) * ${k})`;
+
+// Zona sudah diurutkan server (Bahaya, Offline, Waspada, Aman), jadi yang bermasalah selalu di halaman pertama.
+// Dibagi rata antarhalaman (7 zona = 4 + 3) supaya kartu tidak ada yang sendirian di halaman terakhir.
+function pageZones() {
+    const total = state.zones.length;
+    const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const size = Math.ceil(total / pages);
+    page = Math.min(page, pages - 1);
+    return { zones: state.zones.slice(page * size, page * size + size), pages };
+}
+
+function renderPager(pages) {
+    const pager = document.getElementById('monitor-pager');
+    pager.hidden = pages <= 1;
+    if (pages <= 1) return;
+    const dots = Array.from({ length: pages }, (_, i) => `<span class="inline-block size-[0.9em] rounded-full ${i === page ? 'bg-white' : 'bg-white/25'}"></span>`).join('');
+    pager.innerHTML = `${dots}<span>Halaman ${page + 1} dari ${pages}</span>`;
+}
+
+function nextPage() {
+    const { pages } = pageZones();
+    if (pages <= 1) return;
+    page = (page + 1) % pages;
+    renderZones();
 }
 
 function renderZones() {
-    const compact = state.zones.length > COMPACT_ABOVE;
-    const temp = compact ? 'text-[clamp(2rem,3.4vw,4.5rem)]' : 'text-[clamp(2.5rem,5.2vw,7rem)]';
-    const humid = compact ? 'text-[clamp(1.1rem,1.8vw,2.4rem)]' : 'text-[clamp(1.4rem,2.6vw,3.2rem)]';
-    const name = compact ? 'text-[clamp(1rem,1.6vw,2rem)]' : 'text-[clamp(1.2rem,2vw,2.6rem)]';
-
-    document.getElementById('monitor-zones').innerHTML = state.zones
+    const view = pageZones();
+    renderPager(view.pages);
+    document.getElementById('monitor-zones').innerHTML = view.zones
         .map((zone) => {
             const dim = zone.status === 'offline' ? 'opacity-80' : '';
             return `
-        <section class="flex flex-col justify-center gap-2 rounded-3xl border border-t-[0.6rem] border-white/10 p-[1.6vw] ${CARD[zone.status] ?? CARD.tanpa_data}">
-            <div class="flex items-start justify-between gap-3">
-                <h2 class="min-w-0 truncate ${name} font-semibold text-gray-100">${esc(zone.name)}</h2>
-                <span class="shrink-0 rounded-full px-3 py-1 text-[clamp(0.75rem,1.1vw,1.3rem)] font-bold tracking-wide ${BADGE[zone.status] ?? BADGE.tanpa_data}">${esc(zone.status_label)}</span>
+        <section class="flex min-h-0 flex-col justify-center overflow-hidden rounded-3xl border border-white/10 ${CARD[zone.status] ?? CARD.tanpa_data}" style="gap:${u(0.25)};padding:${u(0.8)};border-top-width:${u(0.35)}">
+            <div class="flex items-start justify-between" style="gap:${u(0.4)}">
+                <h2 class="min-w-0 truncate font-semibold text-gray-100" style="font-size:${u(0.95)}">${esc(zone.name)}</h2>
+                <span class="shrink-0 rounded-full font-bold tracking-wide ${BADGE[zone.status] ?? BADGE.tanpa_data}" style="font-size:${u(0.6)};padding:${u(0.1)} ${u(0.45)}">${esc(zone.status_label)}</span>
             </div>
-            <p class="${temp} leading-none font-extrabold tabular-nums ${dim}">${number(zone.temperature)}<span class="font-bold">°C</span></p>
-            <p class="${humid} font-semibold text-gray-200 tabular-nums ${dim}">Kelembapan ${number(zone.humidity)}%</p>
-            <p class="mt-1 text-[clamp(0.9rem,1.4vw,1.7rem)] text-gray-300">${esc(limits(zone))}</p>
-            <p class="text-[clamp(0.9rem,1.4vw,1.7rem)] text-gray-400" data-seen data-seconds="${zone.last_seen_seconds ?? ''}" data-status="${esc(zone.status)}"></p>
+            <p class="leading-none font-extrabold whitespace-nowrap tabular-nums ${dim}" style="font-size:${u(2.7)}">${number(zone.temperature)}<span class="font-bold">°C</span></p>
+            <p class="font-semibold whitespace-nowrap text-gray-200 tabular-nums ${dim}" style="font-size:${u(1.2)}">Kelembapan ${number(zone.humidity)}%</p>
+            <p class="truncate text-gray-300" style="font-size:${u(0.75)}">${esc(limits(zone))}</p>
+            <p class="truncate text-gray-400" style="font-size:${u(0.75)}" data-seen data-seconds="${zone.last_seen_seconds ?? ''}" data-status="${esc(zone.status)}"></p>
         </section>`;
         })
         .join('');
+    fitGrid();
     tickSeen();
+}
+
+// TV tidak bisa digulir, jadi semua zona harus muat satu layar. Dicoba setiap jumlah kolom; yang memberi
+// ukuran huruf terbesar menang. Jumlah zona sedikit = kartu besar, banyak = kartu kecil tetapi tetap terbaca.
+function fitGrid() {
+    const zones = document.getElementById('monitor-zones');
+    const count = zones.children.length; // hanya kartu di halaman yang sedang tampil
+    const { width, height } = zones.getBoundingClientRect();
+    if (count === 0 || width === 0 || height === 0) return;
+
+    const gap = Math.max(8, width * 0.012);
+    let best = { unit: 0, cols: 1, rows: count };
+    for (let cols = 1; cols <= Math.min(count, MAX_COLS); cols++) {
+        const rows = Math.ceil(count / cols);
+        const cellW = (width - gap * (cols - 1)) / cols;
+        const cellH = (height - gap * (rows - 1)) / rows;
+        const unit = Math.min(cellW / CELL_W_U, cellH / CELL_H_U);
+        if (unit > best.unit) best = { unit, cols, rows };
+    }
+
+    zones.style.gap = `${gap}px`;
+    zones.style.gridTemplateColumns = `repeat(${best.cols}, minmax(0, 1fr))`;
+    zones.style.gridTemplateRows = `repeat(${best.rows}, minmax(0, 1fr))`;
+    zones.style.setProperty('--u', `${Math.min(best.unit, width * 0.06)}px`);
 }
 
 // "Diperbarui n dtk lalu" dihitung ulang tiap detik dari data terakhir, tanpa menunggu polling.
@@ -198,5 +256,9 @@ async function refresh() {
 }
 
 render();
+// Tinggi sisa layar berubah bila pita status berganti (mis. rincian bahaya lebih panjang) atau jendela diubah ukurannya.
+if (typeof ResizeObserver === 'function') new ResizeObserver(fitGrid).observe(document.getElementById('monitor-zones'));
+else window.addEventListener('resize', fitGrid);
 poller = setInterval(refresh, POLL_MS);
+setInterval(nextPage, PAGE_MS);
 setInterval(tick, 1000);

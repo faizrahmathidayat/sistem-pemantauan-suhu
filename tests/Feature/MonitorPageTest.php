@@ -108,6 +108,35 @@ class MonitorPageTest extends TestCase
         $this->assertStringNotContainsString('</script><script>alert(1)', $html);
     }
 
+    public function test_layout_fits_the_screen_without_scrolling(): void
+    {
+        $view = file_get_contents(resource_path('views/monitor/show.blade.php'));
+        $js = file_get_contents(resource_path('js/monitor.js'));
+
+        // TV tidak bisa digulir: halaman setinggi layar, dan JS memilih jumlah kolom/baris serta ukuran huruf agar semua zona muat.
+        $this->assertStringContainsString('h-screen', $view);
+        $this->assertStringContainsString('overflow-hidden', $view);
+        $this->assertStringNotContainsString('min-h-screen', $view);
+        $this->assertStringNotContainsString('auto-fit', $view);
+        $this->assertStringContainsString('function fitGrid', $js);
+        $this->assertStringContainsString('ResizeObserver', $js);
+        $this->assertStringContainsString('--u', $js);
+        $this->assertStringNotContainsString('COMPACT_ABOVE', $js);
+    }
+
+    public function test_many_zones_are_paged_automatically_with_an_indicator(): void
+    {
+        $js = file_get_contents(resource_path('js/monitor.js'));
+        $html = $this->get("/monitor/{$this->token}")->assertOk()->getContent();
+
+        // Maksimal 6 kartu per layar; lebih dari itu berganti halaman sendiri, dan ada penanda halaman.
+        $this->assertStringContainsString('PER_PAGE = 6', $js);
+        $this->assertStringContainsString('PAGE_MS = 10_000', $js);
+        $this->assertStringContainsString('function pageZones', $js);
+        $this->assertStringContainsString('monitor-pager', $js);
+        $this->assertStringContainsString('id="monitor-pager"', $html);
+    }
+
     public function test_script_contract(): void
     {
         $js = file_get_contents(resource_path('js/monitor.js'));
