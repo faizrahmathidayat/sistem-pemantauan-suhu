@@ -59,19 +59,31 @@ Instalasi lama yang di-`migrate`: zona yang sudah ada dipindahkan ke gudang bawa
 
 Ubah lewat menu **Batas Zona** di dashboard (`/zones`; perlu izin `zone.update`, perubahan langsung berlaku). Setiap perubahan lewat halaman ini tercatat (siapa, kapan, nilai lama → baru) di menu **Log Perubahan** (`/audit-logs`); mengubah langsung di database atau seeder tidak tercatat. Alternatif: `database/seeders/ZoneSeeder.php` (lalu `php artisan db:seed --class=ZoneSeeder`, yang menimpa nilai di database) atau langsung di tabel `zones` (`temp_min`, `temp_max`, `humidity_min`, `humidity_max`; isi kelembapan dengan NULL untuk tidak memeriksanya; `warning_margin` dan `humidity_warning_margin` mengatur batas status Waspada).
 
+## Laporan
+
+Menu **Laporan** (`/reports`, izin `report.view`) menampilkan riwayat sensor:
+
+- **Filter:** gudang, zona (untuk grafik dan data mentah), dan periode: 24 jam, 7 hari (bawaan), 30 hari, 90 hari, atau **tanggal sendiri**. Data hanya disimpan 90 hari, jadi tanggal awal tidak boleh lebih lama dari itu. Pilihan ikut tersimpan di alamat halaman.
+- **Ringkasan per zona:** suhu dan kelembapan terendah / tertinggi / rata-rata, jumlah pembacaan, jumlah insiden, lama insiden, lama sensor offline, dan persentase pembacaan yang dalam batas (dihitung terhadap batas zona *saat ini*).
+- **Grafik** zona terpilih dengan garis rata-rata, terendah, dan tertinggi per interval (supaya lonjakan singkat tidak tersembunyi) serta garis batas zona, plus daftar insiden zona itu.
+- **Unduh CSV:** ringkasan semua zona di gudang itu, dan data mentah satu zona. File berformat UTF-8 (dengan BOM), pemisah koma, titik desimal. Excel berbahasa Indonesia kadang menaruh semuanya dalam satu kolom; buka lewat **Data → From Text/CSV**.
+- **Cetak / Simpan PDF:** memakai fitur cetak browser (menu dan formulir tidak ikut tercetak). Tidak ada pembuatan PDF di server.
+
+User hanya melihat gudang yang di-assign; gudang atau zona lain ditolak (403) di halaman maupun unduhan. Laporan harian otomatis belum ada.
+
 ## User dan token perangkat
 
 Tidak ada halaman pendaftaran publik. User dibuat oleh administrator lewat menu **User** (`/users`) atau lewat perintah di bawah.
 
 ### Role dan hak akses
 
-Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role dikelola di menu **Role** (`/roles`, izin `role.manage`) dengan kotak centang izin per role. Izin yang tersedia: `dashboard.view`, `incident.view`, `incident.acknowledge`, `notification.view`, `warehouse.manage`, `zone.view`, `zone.update`, `zone.manage`, `auditlog.view`, `user.manage`, `role.manage`. Role menentukan *apa* yang boleh dilakukan; assignment gudang menentukan *di gudang mana*.
+Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role dikelola di menu **Role** (`/roles`, izin `role.manage`) dengan kotak centang izin per role. Izin yang tersedia: `dashboard.view`, `incident.view`, `incident.acknowledge`, `notification.view`, `report.view`, `warehouse.manage`, `zone.view`, `zone.update`, `zone.manage`, `auditlog.view`, `user.manage`, `role.manage`. Role menentukan *apa* yang boleh dilakukan; assignment gudang menentukan *di gudang mana*.
 
 | Role awal | Izin |
 |---|---|
 | Administrator (sistem) | Semua izin, selalu (tidak bisa diubah atau dihapus) |
-| Supervisor | Dashboard, insiden (lihat dan tandai ditangani), notifikasi, batas zona (lihat dan ubah), log perubahan |
-| Operator | Dashboard, insiden (lihat dan tandai ditangani), notifikasi |
+| Supervisor | Dashboard, insiden (lihat dan tandai ditangani), notifikasi, laporan, batas zona (lihat dan ubah), log perubahan |
+| Operator | Dashboard, insiden (lihat dan tandai ditangani), notifikasi, laporan |
 
 - Alert (notifikasi insiden) hanya dikirim ke user yang rolenya punya `notification.view` **dan** (Administrator atau di-assign ke gudang zona itu).
 - User non-Administrator (pemegang `user.manage`) hanya boleh meng-assign gudang yang ia sendiri punya, dan hanya boleh melihat, mengubah, atau menghapus user yang seluruh gudangnya termasuk gudang miliknya (atau yang belum punya gudang). User gudang lain tidak tampil di daftar dan tidak bisa disentuh; kalau tidak, ia bisa mengganti kata sandi user itu lalu masuk sebagai dia.
@@ -80,7 +92,7 @@ Setiap user punya **satu role**; role menentukan fitur yang boleh dipakai. Role 
 - Izin `user.manage` dan `role.manage` bersifat kuat: pemegang `role.manage` bisa memberi role-nya sendiri izin apa pun (kecuali menjadi Administrator). Berikan hanya kepada orang yang dipercaya.
 - Role yang masih dipakai user tidak bisa dihapus. User tanpa role hanya melihat halaman "belum punya hak akses".
 - Pembuatan, perubahan, dan penghapusan user dan role tercatat di **Log Perubahan** (kata sandi tidak pernah dicatat).
-- Instalasi yang sudah berjalan: `php artisan migrate` membuat role awal dan menjadikan semua user yang ada sebagai Administrator.
+- Instalasi yang sudah berjalan: `php artisan migrate` membuat role awal dan menjadikan semua user yang ada sebagai Administrator, dan memberi izin `report.view` ke role yang sudah punya `dashboard.view` (cabut di menu **Role** bila perlu).
 
 ```bash
 php artisan user:create "Budi Santoso" budi@example.com    # kata sandi akan ditanyakan; role bawaan Administrator
@@ -136,4 +148,4 @@ php artisan test
 
 ## Batasan versi 1
 
-HTTP tanpa HTTPS (jaringan lokal), satu role per user (berlaku di semua gudangnya; role per gudang belum ada), produk hanya berupa nama (tanpa stok), `device_id` zona tidak bisa diubah setelah dibuat, tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi.
+HTTP tanpa HTTPS (jaringan lokal), satu role per user (berlaku di semua gudangnya; role per gudang belum ada), produk hanya berupa nama (tanpa stok), `device_id` zona tidak bisa diubah setelah dibuat, tanpa antrean offline di firmware, notifikasi hanya di dalam aplikasi, data sensor hanya disimpan 90 hari (laporan tidak bisa melihat lebih lama; unduh CSV berkala bila perlu arsip), tanpa laporan harian otomatis.

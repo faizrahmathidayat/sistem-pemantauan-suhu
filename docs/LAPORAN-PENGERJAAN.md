@@ -182,3 +182,15 @@ Dokumentasi lengkap ada di `README.md`.
 - Rancangan: `docs/superpowers/specs/2026-11-09-sistem-pemantauan-suhu-design.md`
 - Rencana implementasi: `docs/superpowers/plans/2026-11-09-sistem-pemantauan-suhu.md`
 - Panduan firmware: `firmware/esp32-telemetry/README.md`
+
+## 14. Pembaruan sesudah laporan ini
+
+Bagian 1-13 menggambarkan keadaan saat 130 tes. Sesudahnya ditambahkan (README memuat cara pakainya):
+
+| Fitur | Isi singkat |
+|---|---|
+| Hak akses per role | Role dan izin (`dashboard.view`, `incident.*`, `zone.*`, `auditlog.view`, `user.manage`, `role.manage`, ...), Administrator sistem, role awal Supervisor dan Operator |
+| Multi-gudang | Gudang → Zona → Produk; user di-assign ke gudang dan hanya melihat serta menerima alert gudangnya; dashboard dengan pilihan gudang |
+| Riwayat & Laporan (10 Nov 2026) | Menu **Laporan** (izin `report.view`): filter gudang/zona/periode (24 jam sampai 90 hari atau tanggal sendiri), ringkasan per zona (min/maks/rata-rata, insiden, offline, % dalam batas), grafik rata-rata/terendah/tertinggi, unduh CSV (ringkasan dan data mentah), cetak ke PDF lewat browser |
+
+Rancangan dan rencana: `docs/superpowers/specs/2026-11-09-hak-akses-design.md`, `2026-11-09-multi-gudang-design.md`, `2026-11-10-riwayat-laporan-design.md` (dan rencana di `docs/superpowers/plans/`). Jumlah tes sekarang 333 (332 lulus, 1 sengaja dilewati di SQLite).

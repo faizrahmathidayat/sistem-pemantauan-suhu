@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/readings.csv', [ReportController::class, 'readingsCsv'])->name('reports.readings-csv');
     });
 
-    Route::get('/audit-logs',[AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
 
     Route::resource('warehouses', WarehouseController::class)->except('show')->middleware('can:warehouse.manage');
     Route::resource('users', UserController::class)->except('show')->middleware('can:user.manage');

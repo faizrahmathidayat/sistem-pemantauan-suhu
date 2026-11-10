@@ -11,6 +11,7 @@ use App\Support\ReportPeriod;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\LazyCollection;
 use Tests\TestCase;
 
 class ReportServiceTest extends TestCase
@@ -211,7 +212,7 @@ class ReportServiceTest extends TestCase
 
         $readings = $this->service->readings($this->zone, $this->day);
 
-        $this->assertInstanceOf(\Illuminate\Support\LazyCollection::class, $readings);
+        $this->assertInstanceOf(LazyCollection::class, $readings);
         $this->assertSame([$first->id, $second->id], $readings->pluck('id')->all());
     }
 }

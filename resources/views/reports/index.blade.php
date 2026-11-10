@@ -84,6 +84,7 @@
                     @if ($filters->zone)
                         <a href="{{ route('reports.readings-csv', $downloadQuery) }}" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Unduh data mentah (CSV)</a>
                     @endif
+                    <button type="button" onclick="window.print()" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Cetak / Simpan PDF</button>
                 </div>
             </div>
 
@@ -161,3 +162,7 @@
         @endif
     @endif
 @endsection
+
+@push('scripts')
+    @vite(['resources/js/reports.js'])
+@endpush
