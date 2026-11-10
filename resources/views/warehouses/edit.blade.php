@@ -3,32 +3,31 @@
 @section('title', 'Ubah Gudang '.$warehouse->name)
 
 @section('content')
-    <a href="{{ route('warehouses.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← Kembali</a>
-    <h1 class="mt-1 text-lg font-semibold">Ubah gudang {{ $warehouse->name }}</h1>
+    <x-page-header :title="'Ubah gudang '.$warehouse->name" :crumbs="[['label' => 'Gudang', 'url' => route('warehouses.index')]]" />
 
     @include('warehouses._form', ['action' => route('warehouses.update', $warehouse)])
 
-    <section class="mt-5">
-        <div class="flex items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Zona di gudang ini</h2>
+    <x-card title="Zona di gudang ini" flush class="mt-6 max-w-2xl">
+        <x-slot:actions>
             @can('zone.manage')
-                <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">+ Zona</a>
+                <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="btn btn-primary btn-sm">+ Zona</a>
             @endcan
-        </div>
-        <ul class="mt-2 space-y-2">
+        </x-slot:actions>
+
+        <ul class="divide-y divide-gray-100">
             @forelse ($warehouse->zones as $zone)
-                <li class="flex items-start justify-between gap-2 rounded-xl bg-white p-3 shadow-sm">
+                <li class="flex items-start justify-between gap-3 px-5 py-4 sm:px-6">
                     <div class="min-w-0">
-                        <p class="font-semibold">{{ $zone->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $zone->device_id }}@if ($zone->products->isNotEmpty()) · {{ $zone->products->pluck('name')->implode(', ') }}@endif</p>
+                        <p class="font-medium text-gray-800">{{ $zone->name }}</p>
+                        <p class="text-xs text-gray-500">{{ $zone->device_id }}@if ($zone->products->isNotEmpty()) · {{ $zone->products->pluck('name')->implode(', ') }}@endif</p>
                     </div>
                     @can('zone.manage')
-                        <a href="{{ route('zones.manage', $zone) }}" class="shrink-0 rounded-lg bg-white px-3 py-2 text-sm font-medium shadow-sm ring-1 ring-slate-200 hover:bg-slate-50">Kelola</a>
+                        <a href="{{ route('zones.manage', $zone) }}" class="btn btn-secondary btn-sm shrink-0">Kelola</a>
                     @endcan
                 </li>
             @empty
-                <li class="rounded-xl bg-white p-3 text-sm text-slate-500 shadow-sm">Belum ada zona.</li>
+                <li><x-empty title="Belum ada zona." icon="zone" /></li>
             @endforelse
         </ul>
-    </section>
+    </x-card>
 @endsection

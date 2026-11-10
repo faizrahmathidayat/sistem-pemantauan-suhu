@@ -3,8 +3,7 @@
 @section('title', 'Ubah User '.$user->name)
 
 @section('content')
-    <a href="{{ route('users.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← Kembali</a>
-    <h1 class="mt-1 text-lg font-semibold">Ubah user {{ $user->name }}</h1>
+    <x-page-header :title="'Ubah user '.$user->name" :crumbs="[['label' => 'User', 'url' => route('users.index')]]" />
 
     @include('users._form', ['action' => route('users.update', $user)])
 @endsection
