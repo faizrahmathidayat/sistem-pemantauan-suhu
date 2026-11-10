@@ -83,7 +83,7 @@ class MonitorPageTest extends TestCase
     {
         $middleware = Route::getRoutes()->getByName('monitor.show')->gatherMiddleware();
 
-        $this->assertContains('throttle:60,1', $middleware);
+        $this->assertContains('throttle:60,1,monitor-page', $middleware);
         $this->assertNotContains('auth', $middleware);
     }
 
@@ -117,6 +117,8 @@ class MonitorPageTest extends TestCase
         $this->assertStringContainsString('TIDAK TERHUBUNG KE SERVER', $js);
         $this->assertStringContainsString('Alamat monitor ini tidak berlaku lagi', $js);
         $this->assertStringContainsString('location.reload', $js);
+        // Muat ulang hanya bila server baru saja menjawab 200; kalau tidak, TV terjebak di halaman galat peramban.
+        $this->assertMatchesRegularExpression('~fetch\(location\.href[^;]*\);\s*if \(response\.ok\) location\.reload\(\)~s', $js);
         $this->assertStringContainsString("cache: 'no-store'", $js);
         $this->assertStringContainsString('resources/js/monitor.js', file_get_contents(base_path('vite.config.js')));
     }

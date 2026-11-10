@@ -93,8 +93,20 @@ class MonitorDataTest extends TestCase
     {
         $middleware = Route::getRoutes()->getByName('monitor.data')->gatherMiddleware();
 
-        $this->assertContains('throttle:300,1', $middleware);
+        $this->assertContains('throttle:300,1,monitor-data', $middleware);
         $this->assertNotContains('auth', $middleware);
+    }
+
+    public function test_polling_does_not_use_up_the_login_or_page_rate_limits(): void
+    {
+        // Setiap throttle tanpa nama memakai kunci IP yang sama; tanpa awalan sendiri, polling TV
+        // menghabiskan jatah login (10/menit) dan jatah halaman monitor (60/menit).
+        for ($i = 0; $i < 61; $i++) {
+            $this->getJson("/monitor/{$this->token}/data")->assertOk();
+        }
+
+        $this->post('/login', ['email' => 'tidak@ada.test', 'password' => 'salah'])->assertStatus(302);
+        $this->get("/monitor/{$this->token}")->assertOk();
     }
 
     public function test_logged_in_user_gets_the_same_result(): void

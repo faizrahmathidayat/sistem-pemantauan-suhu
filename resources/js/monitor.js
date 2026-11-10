@@ -15,6 +15,7 @@ let state = JSON.parse(document.getElementById('monitor-initial').textContent);
 let receivedAt = Date.now(); // waktu lokal saat data terakhir diterima
 let lastSuccess = Date.now();
 let inFlight = false;
+let reloadChecking = false;
 let poller = null;
 
 const LEVEL = {
@@ -138,7 +139,22 @@ function tick() {
     document.getElementById('monitor-zones').classList.toggle('grayscale', stale);
     document.getElementById('monitor-banner').classList.toggle('opacity-30', stale);
 
-    if (Date.now() - startedAt >= RELOAD_AFTER_MS && !stale) location.reload();
+    if (Date.now() - startedAt >= RELOAD_AFTER_MS && !stale && !reloadChecking) {
+        reloadChecking = true;
+        reloadIfServerHealthy().finally(() => setTimeout(() => (reloadChecking = false), 60_000));
+    }
+}
+
+// Muat ulang penuh hanya bila server baru saja menjawab 200. Kalau server sedang 503/429/galat,
+// memuat ulang membuat TV terjebak di halaman galat peramban tanpa JavaScript; lebih baik tetap
+// di halaman ini (pita "tidak terhubung" tetap bekerja) dan mencoba lagi semenit kemudian.
+async function reloadIfServerHealthy() {
+    try {
+        const response = await fetch(location.href, { cache: 'no-store' });
+        if (response.ok) location.reload();
+    } catch {
+        // coba lagi nanti
+    }
 }
 
 function render() {
