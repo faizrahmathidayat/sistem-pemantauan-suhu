@@ -114,6 +114,16 @@ php artisan demo:clear             # hapus semua data demo
 
 Semua data demo ada di gudang tersendiri sehingga `demo:clear` tidak menyentuh data asli. Administrator langsung melihat "Gudang Demo"; user lain perlu di-assign ke gudang itu lewat menu **User**. Tanpa `demo:simulate`, zona demo ditandai offline setelah 2 menit (dan memicu insiden serta notifikasi), seperti sensor yang mati. `demo:seed --days=N` mengatur panjang riwayat (1-90).
 
+## Tampilan
+
+Antarmuka memakai pola **TailAdmin** (sidebar kiri, header yang menempel, kartu, tabel, badge) yang ditulis sendiri di atas Tailwind 4; tidak ada berkas template yang disalin.
+
+- **Layout:** `resources/views/layouts/app.blade.php` dengan `layouts/partials/sidebar` dan `header`. Menu sidebar hanya menampilkan yang diizinkan role; di HP sidebar menjadi panel geser (Alpine.js). Banner kritis menempel tepat di bawah header.
+- **Komponen Blade** (`resources/views/components/`): `x-icon`, `x-card`, `x-badge`, `x-page-header`, `x-alert`, `x-empty`, `x-table`, `x-nav-link`, `x-form-errors`, `x-flash`. Kelas formulir dan tombol (`.form-input`, `.btn-primary`, `.chip`, dll.) ada di `resources/css/app.css`.
+- **Warna:** skala `brand` di `@theme` pada `resources/css/app.css` (warna utama `#0a1f12` = `brand-500`); ganti skala itu untuk mengganti tema. Nama aplikasi di sidebar dan judul halaman diambil dari `APP_NAME` di `.env`.
+- Tabel di layar lebar dan daftar kartu di HP/tablet (`data-mobile-list`); tombol aksi utama selebar layar di HP; zona berstatus Bahaya diurutkan paling atas oleh server.
+- Setelah mengubah kelas atau JS: `npm run build`. Tidak ada mode gelap.
+
 ## Menjalankan
 
 Dua proses harus hidup bersamaan:
