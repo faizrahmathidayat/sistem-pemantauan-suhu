@@ -18,6 +18,7 @@ class HomeController extends Controller
         'dashboard.view' => 'dashboard',
         'incident.view' => 'incidents.index',
         'notification.view' => 'notifications.index',
+        'report.view' => 'reports.index',
         'zone.view' => 'zones.index',
         'auditlog.view' => 'audit-logs.index',
         'warehouse.manage' => 'warehouses.index',

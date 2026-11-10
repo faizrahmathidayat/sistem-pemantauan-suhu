@@ -15,11 +15,12 @@ final class StarterRoles
     private const STARTERS = [
         'Supervisor' => [
             Permission::DashboardView, Permission::IncidentView, Permission::IncidentAcknowledge,
-            Permission::NotificationView, Permission::ZoneView, Permission::ZoneUpdate, Permission::AuditLogView,
+            Permission::NotificationView, Permission::ReportView, Permission::ZoneView, Permission::ZoneUpdate,
+            Permission::AuditLogView,
         ],
         'Operator' => [
             Permission::DashboardView, Permission::IncidentView, Permission::IncidentAcknowledge,
-            Permission::NotificationView,
+            Permission::NotificationView, Permission::ReportView,
         ],
     ];
 

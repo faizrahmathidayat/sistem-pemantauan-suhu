@@ -51,6 +51,9 @@ class AccessControlTest extends TestCase
             'zone edit' => ['GET', '/zones/{zone}/edit', Permission::ZoneUpdate],
             'zone update' => ['PUT', '/zones/{zone}', Permission::ZoneUpdate],
             'audit logs' => ['GET', '/audit-logs', Permission::AuditLogView],
+            'reports' => ['GET', '/reports', Permission::ReportView],
+            'reports summary csv' => ['GET', '/reports/summary.csv', Permission::ReportView],
+            'reports readings csv' => ['GET', '/reports/readings.csv', Permission::ReportView],
         ];
     }
 
@@ -96,6 +99,9 @@ class AccessControlTest extends TestCase
 
         $zoneOnly = User::factory()->withPermissions(Permission::ZoneView)->create();
         $this->actingAs($zoneOnly)->get('/home')->assertRedirect(route('zones.index'));
+
+        $reportOnly = User::factory()->withPermissions(Permission::ReportView)->create();
+        $this->actingAs($reportOnly)->get('/home')->assertRedirect(route('reports.index'));
     }
 
     public function test_navigation_only_shows_permitted_links(): void

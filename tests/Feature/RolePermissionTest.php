@@ -34,12 +34,12 @@ class RolePermissionTest extends TestCase
         $this->assertFalse($supervisor->is_system);
         $this->assertSame([
             'auditlog.view', 'dashboard.view', 'incident.acknowledge', 'incident.view',
-            'notification.view', 'zone.update', 'zone.view',
+            'notification.view', 'report.view', 'zone.update', 'zone.view',
         ], $this->values($supervisor->permissions()));
 
         $operator = Role::where('name', 'Operator')->sole();
         $this->assertSame([
-            'dashboard.view', 'incident.acknowledge', 'incident.view', 'notification.view',
+            'dashboard.view', 'incident.acknowledge', 'incident.view', 'notification.view', 'report.view',
         ], $this->values($operator->permissions()));
     }
 
