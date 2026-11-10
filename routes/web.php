@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\IncidentAcknowledgeController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
@@ -43,7 +44,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
     });
 
-    Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
+    Route::middleware('can:report.view')->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    });
+
+    Route::get('/audit-logs',[AuditLogController::class, 'index'])->middleware('can:auditlog.view')->name('audit-logs.index');
 
     Route::resource('warehouses', WarehouseController::class)->except('show')->middleware('can:warehouse.manage');
     Route::resource('users', UserController::class)->except('show')->middleware('can:user.manage');

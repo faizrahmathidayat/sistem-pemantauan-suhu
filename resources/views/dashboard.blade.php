@@ -33,7 +33,12 @@
         <section id="zones" class="grid gap-3 md:grid-cols-3"></section>
 
         <section class="mt-4 rounded-xl bg-white p-4 shadow-sm">
-            <h2 class="font-semibold">Tren 24 jam terakhir</h2>
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="font-semibold">Tren 24 jam terakhir</h2>
+                @can('report.view')
+                    <a href="{{ route('reports.index') }}" class="text-sm text-emerald-700">Riwayat lengkap</a>
+                @endcan
+            </div>
             <div class="mt-2 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" id="chart-zone-chips" aria-label="Pilih zona"></div>
             <div class="mt-2 flex gap-2 overflow-x-auto whitespace-nowrap pb-1" id="chart-metric-chips" aria-label="Pilih metrik">
                 <button type="button" data-metric="temperature" class="chip chip-active">Suhu</button>

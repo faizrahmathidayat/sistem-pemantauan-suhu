@@ -11,7 +11,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-800 antialiased">
     @yield('banner')
 
-    <header class="border-b border-slate-200 bg-white">
+    <header class="border-b border-slate-200 bg-white print:hidden">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
             <a href="{{ url('/dashboard') }}" class="font-semibold">🥬 {{ config('app.name') }}</a>
             <nav class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -20,6 +20,9 @@
                 @endcan
                 @can('incident.view')
                     <a href="{{ url('/incidents') }}" class="hover:text-emerald-700">Riwayat Insiden</a>
+                @endcan
+                @can('report.view')
+                    <a href="{{ url('/reports') }}" class="hover:text-emerald-700">Laporan</a>
                 @endcan
                 @can('zone.view')
                     <a href="{{ url('/zones') }}" class="hover:text-emerald-700">Batas Zona</a>
