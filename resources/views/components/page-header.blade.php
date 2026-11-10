@@ -2,6 +2,11 @@
 
 <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
+        @if ($crumbs)
+            {{-- HP: jalur halaman disembunyikan, jadi sediakan tautan kembali ke induknya --}}
+            @php($parent = end($crumbs))
+            <a href="{{ $parent['url'] }}" class="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 md:hidden">← {{ $parent['label'] }}</a>
+        @endif
         <h1 class="text-xl font-semibold text-gray-800 sm:text-2xl">{{ $title }}</h1>
         @if ($description)
             <p class="mt-1 text-sm text-gray-500">{{ $description }}</p>

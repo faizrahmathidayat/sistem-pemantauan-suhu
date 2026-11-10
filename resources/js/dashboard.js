@@ -190,7 +190,7 @@ function renderZones() {
                     <span class="flex items-center gap-2 ${humidityClass}">${ICON.droplet}<span>${num(z.humidity)}%${humidityArrow}${humidityBound}</span></span>
                     ${humidityLimit}
                 </div>
-                <p class="mt-3 flex items-center gap-1.5 text-xs text-gray-400">${ICON.clock} update ${ago(z.last_seen_seconds)}</p>
+                <p class="mt-3 flex items-center gap-1.5 text-xs text-gray-500">${ICON.clock} update ${ago(z.last_seen_seconds)}</p>
                 ${products}
             </article>`;
         })

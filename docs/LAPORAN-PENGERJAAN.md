@@ -329,7 +329,7 @@ Seluruh antarmuka digambar ulang dengan pola TailAdmin tanpa mengubah backend (r
 
 | Bagian | Hasil |
 |---|---|
-| Layout | Sidebar kiri (panel geser di HP, Alpine.js), header menempel dengan lonceng notifikasi dan menu pengguna, banner kritis menempel di bawah header, tampilan cetak tanpa menu |
+| Layout | Sidebar kiri (panel geser di HP, Alpine.js; di layar lebar bisa diciutkan menjadi hanya ikon lewat tombol di header, pilihannya diingat), header menempel dengan lonceng notifikasi dan menu pengguna, banner kritis menempel di bawah header, tampilan cetak tanpa menu |
 | Komponen | Ikon SVG buatan sendiri, kartu, badge status, header halaman dengan remah roti, alert, keadaan kosong, tabel, kelas formulir dan tombol seragam |
 | Dashboard | Pilihan gudang (chip), kartu metrik per zona (badge hijau/kuning/merah berdenyut, suhu besar, batas, indikator tren, kelembapan, waktu pembaruan, produk), banner dengan tombol "Tandai Telah Ditangani" selebar layar di HP, grafik Chart.js dalam kartu |
 | Halaman lain | Laporan, Riwayat Insiden, Notifikasi, Log Perubahan, Batas Zona, Gudang, Zona, User, dan Role: tabel di layar lebar dan daftar kartu di HP |
@@ -338,3 +338,5 @@ Seluruh antarmuka digambar ulang dengan pola TailAdmin tanpa mengubah backend (r
 Verifikasi: 375 tes dan seluruhnya lulus kecuali 1 yang sengaja dilewati di SQLite (tambahan 30 tes untuk layout dan tiap kelompok halaman); semua halaman diperiksa di browser pada lebar 375 px dan 1440 px dengan data demo di MySQL (tanpa scroll mendatar, sidebar HP buka-tutup dengan tombol, Esc, dan klik latar, banner menempel saat gulir, tombol Tandai Telah Ditangani bekerja, operator hanya melihat menunya dan mendapat 403 untuk halaman lain). Akun uji sementara untuk pemeriksaan dihapus sesudahnya.
 
 Keputusan: tabel baru tampil mulai lebar `lg` (4-5 kolom) atau `xl` (Riwayat Insiden dan ringkasan Laporan, 7-8 kolom) karena sidebar menyempitkan isi; di bawahnya daftar kartu. Seri grafik suhu memakai hijau `#4f7a5d` karena warna utama hampir hitam. Tidak ada mode gelap dan kolom pencarian.
+
+Setelah review akhir: tautan kembali di HP untuk sub-halaman, tautan induk di halaman Tambah Zona mengikuti izin, ukuran ikon yang tertimpa, warna latar notifikasi belum dibaca, sidebar HP tidak bisa difokus saat tertutup, ring fokus input yang lebih jelas, kontras label, tabel cetak, dan penjagaan header untuk tamu diperbaiki dengan tes (387 tes, 386 lulus). Tercatat belum dikerjakan: banner kritis yang banyak menutup layar HP bila ada beberapa insiden sekaligus, dan peringatan akses di dashboard yang dibuat JavaScript masih berbeda tampilannya dari versi server.

@@ -16,6 +16,7 @@
         'close' => '<path d="M6 6l12 12M18 6 6 18"/>',
         'logout' => '<path d="M10 4H5v16h5"/><path d="m15 8 4 4-4 4M19 12H9"/>',
         'chevron-down' => '<path d="m6 9 6 6 6-6"/>',
+        'chevrons-left' => '<path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>',
         'thermometer' => '<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0Z"/>',
         'droplet' => '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',
         'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -32,4 +33,5 @@
         'info' => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/>',
     ];
 @endphp
-<svg {{ $attributes->merge(['class' => 'size-5']) }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] ?? '' !!}</svg>
+{{-- Kelas ukuran dari pemanggil menggantikan size-5 (bukan ditumpuk: size-5 akan menang di CSS) --}}
+<svg {{ $attributes->except('class') }} class="{{ $attributes->get('class', 'size-5') }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] ?? '' !!}</svg>

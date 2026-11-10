@@ -58,7 +58,7 @@
     }
 
     .form-input {
-        @apply h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10;
+        @apply h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-400 focus:outline-hidden focus:ring-3 focus:ring-brand-400/30;
     }
 
     textarea.form-input {
@@ -102,7 +102,23 @@
     }
 
     .table-th {
-        @apply px-5 py-3 text-start text-xs font-medium whitespace-nowrap text-gray-500;
+        @apply px-5 py-3 text-start text-xs font-medium whitespace-nowrap text-gray-500 print:whitespace-normal;
+    }
+
+    /*
+     * Sidebar yang bisa diciutkan. Transisi baru aktif setelah Alpine menandai <html data-ready>,
+     * supaya keadaan awal (dari localStorage) tidak beranimasi saat halaman dimuat.
+     */
+    html[data-ready='true'] .sidebar-anim {
+        transition-property: width, padding-left, transform, visibility;
+        transition-duration: 300ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html[data-ready='true'] .sidebar-fade {
+        transition-property: opacity, max-width, max-height, margin;
+        transition-duration: 300ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .table-td {

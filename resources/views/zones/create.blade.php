@@ -3,9 +3,18 @@
 @section('title', 'Tambah Zona')
 
 @section('content')
+    @php
+        // Halaman induk yang boleh dibuka user ini: mengubah gudang butuh warehouse.manage, daftar zona butuh zone.view.
+        $crumb = auth()->user()->can('warehouse.manage')
+            ? ['label' => 'Gudang', 'url' => route('warehouses.edit', $warehouse)]
+            : (auth()->user()->can('zone.view')
+                ? ['label' => 'Batas Zona', 'url' => route('zones.index')]
+                : ['label' => 'Beranda', 'url' => route('home')]);
+    @endphp
+
     <x-page-header :title="'Tambah zona di '.$warehouse->name"
                    description="Satu zona = satu sensor ESP32. Token sensor dibuat otomatis dan ditampilkan sekali setelah zona disimpan."
-                   :crumbs="[['label' => 'Gudang', 'url' => route('warehouses.edit', $warehouse)]]" />
+                   :crumbs="[$crumb]" />
 
     <x-form-errors message="Zona belum disimpan. Periksa isian berikut:" />
 

@@ -19,19 +19,27 @@ class LayoutTest extends TestCase
         return User::factory()->withRole(Role::where('name', 'Operator')->sole())->create();
     }
 
+    /** Isi sidebar saja (tautan di header, mis. lonceng notifikasi, tidak ikut dihitung). */
+    private function sidebarOf(string $html): string
+    {
+        preg_match('~<aside id="sidebar".*?</aside>~s', $html, $match);
+
+        return $match[0] ?? '';
+    }
+
     public function test_sidebar_shows_only_permitted_links(): void
     {
-        $page = $this->actingAs($this->operator())->get('/dashboard')->assertOk();
+        $sidebar = $this->sidebarOf($this->actingAs($this->operator())->get('/dashboard')->assertOk()->getContent());
         foreach (['/dashboard', '/incidents', '/reports', '/notifications'] as $path) {
-            $page->assertSee('href="'.url($path).'"', false);
+            $this->assertStringContainsString('href="'.url($path).'"', $sidebar, $path);
         }
         foreach (['/zones', '/warehouses', '/users', '/roles', '/audit-logs'] as $path) {
-            $page->assertDontSee('href="'.url($path).'"', false);
+            $this->assertStringNotContainsString('href="'.url($path).'"', $sidebar, $path);
         }
 
-        $admin = $this->actingAs(User::factory()->create())->get('/dashboard')->assertOk();
+        $admin = $this->sidebarOf($this->actingAs(User::factory()->create())->get('/dashboard')->assertOk()->getContent());
         foreach (['/dashboard', '/incidents', '/reports', '/notifications', '/zones', '/warehouses', '/users', '/roles', '/audit-logs'] as $path) {
-            $admin->assertSee('href="'.url($path).'"', false);
+            $this->assertStringContainsString('href="'.url($path).'"', $admin, $path);
         }
     }
 

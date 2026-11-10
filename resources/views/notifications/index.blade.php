@@ -14,7 +14,7 @@
         @forelse ($notifications as $notification)
             @php($data = $notification->data)
             <li @if (! $notification->read_at) data-unread="true" @endif
-                class="rounded-2xl border bg-white p-4 sm:p-5 {{ $notification->read_at ? 'border-gray-200' : 'border-error-100 border-l-4 border-l-error-600 bg-error-50/40' }}">
+                class="rounded-2xl border p-4 sm:p-5 {{ $notification->read_at ? 'border-gray-200 bg-white' : 'border-error-100 border-l-4 border-l-error-600 bg-error-50/40' }}">
                 <div class="flex items-start justify-between gap-3">
                     <p class="text-base font-semibold text-gray-800">{{ $data['title'] ?? 'Notifikasi' }}</p>
                     @unless ($notification->read_at)

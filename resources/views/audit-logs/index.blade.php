@@ -37,7 +37,7 @@
                                     @foreach ($log->changeLines() as $line)
                                         <li class="flex flex-wrap items-baseline gap-x-2">
                                             <span>{{ $line['label'] }}:</span>
-                                            <span class="text-gray-400 line-through">{{ $line['from'] }}</span>
+                                            <span class="text-gray-500 line-through">{{ $line['from'] }}</span>
                                             <span aria-hidden="true">→</span>
                                             <span class="font-medium text-gray-800">{{ $line['to'] }}</span>
                                         </li>
@@ -68,7 +68,7 @@
                         @foreach ($log->changeLines() as $line)
                             <li class="flex flex-wrap items-baseline gap-x-2">
                                 <span>{{ $line['label'] }}:</span>
-                                <span class="text-gray-400 line-through">{{ $line['from'] }}</span>
+                                <span class="text-gray-500 line-through">{{ $line['from'] }}</span>
                                 <span aria-hidden="true">→</span>
                                 <span class="font-medium text-gray-800">{{ $line['to'] }}</span>
                             </li>
