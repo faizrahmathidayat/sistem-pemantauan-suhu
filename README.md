@@ -102,6 +102,18 @@ php artisan zone:token cikokol-fg                          # token sensor zona F
 
 User yang dibuat lewat CLI belum punya gudang (kecuali Administrator); tetapkan gudangnya lewat menu **User**. Token sensor juga bisa dibuat dari aplikasi (halaman **Kelola zona**). Membuat token lagi untuk zona yang sama memutar token (token lama langsung tidak berlaku).
 
+## Data demo
+
+Untuk melihat dashboard dan Laporan tanpa sensor sungguhan:
+
+```bash
+php artisan demo:seed              # "Gudang Demo": 3 zona (device_id demo-*), 30 hari pembacaan tiap 15 menit, beberapa insiden
+php artisan demo:simulate          # opsional: kirim pembacaan palsu tiap 30 detik (Ctrl+C untuk berhenti)
+php artisan demo:clear             # hapus semua data demo
+```
+
+Semua data demo ada di gudang tersendiri sehingga `demo:clear` tidak menyentuh data asli. Administrator langsung melihat "Gudang Demo"; user lain perlu di-assign ke gudang itu lewat menu **User**. Tanpa `demo:simulate`, zona demo ditandai offline setelah 2 menit (dan memicu insiden serta notifikasi), seperti sensor yang mati. `demo:seed --days=N` mengatur panjang riwayat (1-90).
+
 ## Menjalankan
 
 Dua proses harus hidup bersamaan:
