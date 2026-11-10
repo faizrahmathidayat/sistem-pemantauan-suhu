@@ -16,17 +16,14 @@ class WarehouseMonitorController extends Controller
         abort_unless($request->user()->canAccessWarehouse($warehouse), 403);
 
         $had = $warehouse->hasMonitorToken();
-        $token = null;
-        DB::transaction(function () use ($audit, $request, $warehouse, $had, &$token): void {
-            $token = $warehouse->issueMonitorToken();
+        DB::transaction(function () use ($audit, $request, $warehouse, $had): void {
+            $warehouse->issueMonitorToken();
             $audit->record($request->user(), 'warehouse.monitor_issued', $warehouse, $warehouse->name, [
                 'monitor' => ['from' => $had ? 'aktif' : null, 'to' => 'aktif (alamat baru)'],
             ]);
         });
 
-        return redirect()->route('warehouses.edit', $warehouse)
-            ->with('status', "Alamat monitor {$warehouse->name} dibuat.")
-            ->with('new_monitor_url', route('monitor.show', $token));
+        return redirect()->route('warehouses.edit', $warehouse)->with('status', "Alamat monitor {$warehouse->name} dibuat.");
     }
 
     public function destroy(Request $request, Warehouse $warehouse, AuditLogger $audit): RedirectResponse

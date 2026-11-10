@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\WarehouseFactory;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-#[Hidden(['monitor_token_hash'])]
+#[Hidden(['monitor_token_hash', 'monitor_token'])]
 class Warehouse extends Model
 {
     /** @use HasFactory<WarehouseFactory> */
@@ -20,21 +21,38 @@ class Warehouse extends Model
 
     protected $fillable = ['name'];
 
+    protected function casts(): array
+    {
+        return ['monitor_token' => 'encrypted'];
+    }
+
     /**
-     * Buat kode monitor baru (kode lama langsung tidak berlaku). Hanya hash sha256 yang
-     * disimpan; nilai asli dikembalikan sekali ini saja.
+     * Buat kode monitor baru (kode lama langsung tidak berlaku). Pencarian memakai hash sha256;
+     * salinan terenkripsi disimpan agar admin bisa melihat alamatnya lagi (lihat monitorUrl()).
      */
     public function issueMonitorToken(): string
     {
         $token = Str::random(40);
-        $this->forceFill(['monitor_token_hash' => hash('sha256', $token)])->save();
+        $this->forceFill(['monitor_token_hash' => hash('sha256', $token), 'monitor_token' => $token])->save();
 
         return $token;
     }
 
     public function revokeMonitorToken(): void
     {
-        $this->forceFill(['monitor_token_hash' => null])->save();
+        $this->forceFill(['monitor_token_hash' => null, 'monitor_token' => null])->save();
+    }
+
+    /** Alamat lengkap untuk TV, atau null bila tidak ada kode, atau salinannya tidak ada/tak terbaca (buat ulang alamatnya). */
+    public function monitorUrl(): ?string
+    {
+        try {
+            $token = $this->monitor_token;
+        } catch (DecryptException) {
+            return null;
+        }
+
+        return $token ? route('monitor.show', $token) : null;
     }
 
     public function hasMonitorToken(): bool

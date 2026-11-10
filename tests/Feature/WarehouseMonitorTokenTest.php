@@ -66,6 +66,47 @@ class WarehouseMonitorTokenTest extends TestCase
         $this->assertArrayNotHasKey('monitor_token_hash', $warehouse->fresh()->toArray());
     }
 
+    public function test_url_can_be_shown_again_from_an_encrypted_copy(): void
+    {
+        $warehouse = Warehouse::factory()->create();
+        $token = $warehouse->issueMonitorToken();
+
+        $this->assertSame(route('monitor.show', $token), $warehouse->fresh()->monitorUrl());
+        $this->assertStringNotContainsString($token, json_encode(DB::table('warehouses')->first()));
+        $this->assertArrayNotHasKey('monitor_token', $warehouse->fresh()->toArray());
+    }
+
+    public function test_revoke_also_clears_the_visible_url(): void
+    {
+        $warehouse = Warehouse::factory()->create();
+        $warehouse->issueMonitorToken();
+
+        $warehouse->revokeMonitorToken();
+
+        $this->assertNull($warehouse->fresh()->monitorUrl());
+    }
+
+    public function test_token_issued_before_the_copy_existed_still_works_but_has_no_url_to_show(): void
+    {
+        $warehouse = Warehouse::factory()->create();
+        $token = $warehouse->issueMonitorToken();
+        DB::table('warehouses')->where('id', $warehouse->id)->update(['monitor_token' => null]);
+
+        $this->assertTrue($warehouse->fresh()->hasMonitorToken());
+        $this->assertNull($warehouse->fresh()->monitorUrl());
+        $this->assertTrue($warehouse->is(Warehouse::findByMonitorToken($token)));
+    }
+
+    public function test_an_unreadable_copy_gives_no_url_instead_of_an_error(): void
+    {
+        $warehouse = Warehouse::factory()->create();
+        $warehouse->issueMonitorToken();
+        DB::table('warehouses')->where('id', $warehouse->id)->update(['monitor_token' => 'bukan-hasil-enkripsi']);
+
+        $this->assertNull($warehouse->fresh()->monitorUrl());
+        $this->assertTrue($warehouse->fresh()->hasMonitorToken());
+    }
+
     public function test_two_warehouses_never_share_a_token(): void
     {
         $a = Warehouse::factory()->create();

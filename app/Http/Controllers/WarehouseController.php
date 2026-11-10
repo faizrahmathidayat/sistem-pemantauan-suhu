@@ -47,8 +47,8 @@ class WarehouseController extends Controller
 
         $response = response()->view('warehouses.edit', ['warehouse' => $warehouse->load(['zones' => fn ($zones) => $zones->orderBy('name')->with('products')])]);
 
-        // no-store: alamat monitor sekali-tampil tidak boleh muncul lagi dari cache browser lewat tombol Back.
-        if (session()->has('new_monitor_url')) {
+        // no-store: alamat monitor (rahasia) di halaman ini tidak boleh tersimpan di cache browser/proksi.
+        if ($warehouse->monitorUrl() !== null) {
             $response->header('Cache-Control', 'no-store, private');
         }
 

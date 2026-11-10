@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class WarehouseMonitorAdminTest extends TestCase
@@ -31,7 +32,7 @@ class WarehouseMonitorAdminTest extends TestCase
     {
         $this->actingAs($actor)->post(route('warehouses.monitor.store', $this->warehouse))->assertRedirect(route('warehouses.edit', $this->warehouse));
 
-        return (string) session('new_monitor_url');
+        return (string) $this->warehouse->fresh()->monitorUrl();
     }
 
     private function path(string $url): string
@@ -39,7 +40,7 @@ class WarehouseMonitorAdminTest extends TestCase
         return parse_url($url, PHP_URL_PATH);
     }
 
-    public function test_store_issues_a_token_and_shows_the_full_url_once(): void
+    public function test_store_issues_a_token_and_the_full_url_stays_visible_on_the_edit_page(): void
     {
         $actor = $this->manager($this->warehouse);
         $url = $this->issue($actor);
@@ -49,16 +50,40 @@ class WarehouseMonitorAdminTest extends TestCase
         $this->assertSame(40, strlen($token));
 
         $this->get(route('warehouses.edit', $this->warehouse))->assertOk()->assertSee($url, false);
-        $this->get(route('warehouses.edit', $this->warehouse))->assertOk()->assertDontSee($token, false);
+        $this->get(route('warehouses.edit', $this->warehouse))->assertOk()->assertSee($url, false);
+        $this->get(route('warehouses.index'))->assertOk()->assertDontSee($token, false);
     }
 
-    public function test_edit_page_with_the_new_url_is_not_cacheable(): void
+    public function test_edit_page_showing_the_url_is_not_cacheable(): void
     {
         $this->issue($this->manager($this->warehouse));
 
         $response = $this->get(route('warehouses.edit', $this->warehouse))->assertOk();
 
         $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function test_url_is_not_shown_to_someone_without_access_to_that_warehouse(): void
+    {
+        $this->warehouse->issueMonitorToken();
+        $url = $this->warehouse->fresh()->monitorUrl();
+        $noPermission = User::factory()->withPermissions(Permission::DashboardView)->assignedTo($this->warehouse)->create();
+        $wrongWarehouse = $this->manager(Warehouse::factory()->create());
+
+        foreach ([$noPermission, $wrongWarehouse] as $user) {
+            $response = $this->actingAs($user)->get(route('warehouses.edit', $this->warehouse))->assertForbidden();
+            $this->assertStringNotContainsString($url, $response->getContent());
+        }
+    }
+
+    public function test_active_address_without_a_stored_copy_asks_to_be_recreated(): void
+    {
+        $this->warehouse->issueMonitorToken();
+        DB::table('warehouses')->where('id', $this->warehouse->id)->update(['monitor_token' => null]);
+
+        $this->actingAs($this->manager($this->warehouse))->get(route('warehouses.edit', $this->warehouse))->assertOk()
+            ->assertSee('Alamat monitor aktif')
+            ->assertSee('Buat ulang alamat untuk melihatnya');
     }
 
     public function test_url_works_and_old_one_stops_after_reissue(): void
