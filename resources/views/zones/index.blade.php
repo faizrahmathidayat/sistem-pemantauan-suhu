@@ -14,13 +14,32 @@
     @endif
 
     @forelse ($warehouses as $warehouse)
-        <div class="mt-6 mb-3 flex items-center justify-between gap-3 first:mt-0">
-            <h2 class="text-sm font-semibold tracking-wide text-gray-500 uppercase">{{ $warehouse->name }}</h2>
+        {{-- Tiap gudang bisa dilipat; pilihan diingat per peramban (localStorage). Tanpa JS semuanya tetap terbuka. --}}
+        <section class="mt-6 first:mt-0"
+                 x-data="{
+                     open: true,
+                     init() { try { this.open = ! JSON.parse(localStorage.getItem('zones-collapsed') || '[]').includes({{ $warehouse->id }}); } catch (e) {} },
+                     toggle() {
+                         this.open = ! this.open;
+                         try {
+                             const ids = new Set(JSON.parse(localStorage.getItem('zones-collapsed') || '[]'));
+                             this.open ? ids.delete({{ $warehouse->id }}) : ids.add({{ $warehouse->id }});
+                             localStorage.setItem('zones-collapsed', JSON.stringify([...ids]));
+                         } catch (e) {}
+                     },
+                 }">
+        <div class="mb-3 flex items-center justify-between gap-3">
+            <button type="button" data-warehouse-toggle @click="toggle()" :aria-expanded="open"
+                    class="-ml-2 flex min-w-0 items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-gray-100">
+                <x-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" ::class="open ? '' : '-rotate-90'" />
+                <h2 class="truncate text-sm font-semibold tracking-wide text-gray-500 uppercase">{{ $warehouse->name }}</h2>
+                <span class="shrink-0 text-xs font-normal text-gray-400">{{ $warehouse->zones->count() }} zona</span>
+            </button>
             @can('zone.manage')
                 <a href="{{ route('warehouses.zones.create', $warehouse) }}" class="btn btn-secondary btn-sm">+ Zona</a>
             @endcan
         </div>
-        <ul class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ul x-show="open" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @forelse ($warehouse->zones as $zone)
                 <li>
                     <x-card class="h-full">
@@ -69,6 +88,7 @@
                 </li>
             @endforelse
         </ul>
+        </section>
     @empty
         <x-card><x-empty title="Belum ada gudang yang bisa Anda lihat." icon="building" /></x-card>
     @endforelse

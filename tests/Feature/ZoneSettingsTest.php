@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ZoneStatus;
 use App\Models\SensorLog;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Models\Zone;
 use App\Services\ZoneStatusEvaluator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,6 +43,22 @@ class ZoneSettingsTest extends TestCase
         $this->get('/zones')->assertRedirect(route('login'));
         $this->get("/zones/{$zone->id}/edit")->assertRedirect(route('login'));
         $this->put("/zones/{$zone->id}", $this->payload())->assertRedirect(route('login'));
+    }
+
+    public function test_each_warehouse_section_can_be_collapsed_and_shows_its_zone_count(): void
+    {
+        $warehouse = Warehouse::factory()->create(['name' => 'Gudang Lipat']);
+        Zone::factory()->count(2)->create(['warehouse_id' => $warehouse->id]);
+        Warehouse::factory()->create(['name' => 'Gudang Kosong']);
+
+        $html = $this->actingAs($this->user())->get('/zones')->assertOk()->getContent();
+
+        // Satu tombol lipat per gudang; isinya tetap ada di HTML (dilipat di sisi peramban, jadi tetap terbaca tanpa JS).
+        $this->assertSame(2, substr_count($html, 'data-warehouse-toggle'));
+        $this->assertSame(2, substr_count($html, 'data-warehouse-toggle @click="toggle()" :aria-expanded="open"'));
+        $this->assertStringContainsString('2 zona', $html);
+        $this->assertStringContainsString('0 zona', $html);
+        $this->assertStringContainsString('x-show="open"', $html);
     }
 
     public function test_index_lists_every_zone_with_its_limits(): void
